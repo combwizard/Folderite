@@ -251,14 +251,16 @@ public sealed class MenuComposerTests
     }
 
     [Fact]
-    public void OpenWindows_ItemTextShowsNameTabParent()
+    public void OpenWindows_ItemTextIsNameAndDetailIsParent()
     {
         var config = Config();
         config.ShowOpenWindows = true;
 
         var nodes = Build(config, Ctx(open: [@"C:\Work\Reports"]));
 
-        Assert.Equal("Reports\tC:\\Work", Assert.Single(SectionAfter(nodes, "Open windows")).Text);
+        var item = Assert.Single(SectionAfter(nodes, "Open windows"));
+        Assert.Equal("Reports", item.Text);
+        Assert.Equal(@"C:\Work", item.Detail);
     }
 
     [Fact]
@@ -269,7 +271,9 @@ public sealed class MenuComposerTests
 
         var nodes = Build(config, Ctx(open: [@"C:\Users\me\Docs\"]));
 
-        Assert.Equal("Docs\tC:\\Users\\me", Assert.Single(SectionAfter(nodes, "Open windows")).Text);
+        var item = Assert.Single(SectionAfter(nodes, "Open windows"));
+        Assert.Equal("Docs", item.Text);
+        Assert.Equal(@"C:\Users\me", item.Detail);
     }
 
     [Fact]
@@ -280,7 +284,9 @@ public sealed class MenuComposerTests
 
         var nodes = Build(config, Ctx(open: [@"C:\R&D"]));
 
-        Assert.Equal("R&&D\tC:\\", Assert.Single(SectionAfter(nodes, "Open windows")).Text);
+        var item = Assert.Single(SectionAfter(nodes, "Open windows"));
+        Assert.Equal("R&&D", item.Text);
+        Assert.Equal(@"C:\", item.Detail);
     }
 
     [Fact]
@@ -319,6 +325,17 @@ public sealed class MenuComposerTests
     }
 
     [Fact]
+    public void Recent_ItemTextIsNameAndDetailIsParent()
+    {
+        var nodes = Build(Config(), Ctx(recent: [@"C:\Work\Reports"]));
+
+        var recent = nodes.OfType<SubMenu>().Single(s => s.Text == "&Recent");
+        var item = Assert.IsType<MenuItem>(Assert.Single(recent.Children));
+        Assert.Equal("Reports", item.Text);
+        Assert.Equal(@"C:\Work", item.Detail);
+    }
+
+    [Fact]
     public void Clipboard_ShownWhenDifferentFromCurrent_InvokingNavigates()
     {
         var cmd = new FakeCommands();
@@ -327,8 +344,8 @@ public sealed class MenuComposerTests
 
         var nodes = Build(config, Ctx(Current, clipboard: @"C:\Clip"), cmd);
 
-        var clip = nodes.OfType<MenuItem>().Single(i => i.Text.StartsWith("C&lipboard: ", StringComparison.Ordinal));
-        Assert.Equal("C&lipboard: C:\\Clip", clip.Text);
+        var clip = nodes.OfType<MenuItem>().Single(i => i.Text == "C&lipboard");
+        Assert.Equal(@"C:\Clip", clip.Detail);
         clip.OnInvoke();
         Assert.Equal(new[] { @"C:\Clip" }, cmd.Navigated);
     }

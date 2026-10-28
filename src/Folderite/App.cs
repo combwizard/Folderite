@@ -66,6 +66,7 @@ internal sealed unsafe class App : IMenuCommands, IDisposable
         ]);
         ApplyConfig();
 
+        DarkMode.Enable();
         _icons = new IconCache();
         _menu = new MenuBuilder(_icons);
 

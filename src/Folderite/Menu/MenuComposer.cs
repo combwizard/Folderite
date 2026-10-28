@@ -43,7 +43,7 @@ internal static class MenuComposer
                 actions.Add(MenuSeparator.Instance);
                 actions.Add(new MenuItem("&Add to favorites", () => cmd.AddFavorite(current)));
             }
-            nodes.Add(new SubMenu(Escape(DisplayName(current)), actions, current));
+            nodes.Add(new SubMenu(Escape(DisplayName(current)), actions, current, Detail: ParentOf(current)));
             nodes.Add(MenuSeparator.Instance);
         }
 
@@ -71,7 +71,7 @@ internal static class MenuComposer
         if (config.ShowClipboard && ctx.ClipboardPath is { } clip && !PathEquals(clip, current))
         {
             nodes.Add(MenuSeparator.Instance);
-            nodes.Add(new MenuItem("C&lipboard: " + Escape(clip), () => cmd.Navigate(clip), clip));
+            nodes.Add(new MenuItem("C&lipboard", () => cmd.Navigate(clip), clip, Detail: clip));
         }
 
         nodes.Add(MenuSeparator.Instance);
@@ -103,20 +103,21 @@ internal static class MenuComposer
         }
     }
 
-    /// <summary>"name\tparent" — the tab right-aligns the parent folder in the menu's accelerator column.</summary>
-    private static MenuItem FolderItem(string path, IMenuCommands cmd, bool showParent)
-    {
-        string text = Escape(DisplayName(path));
-        if (showParent && Path.GetDirectoryName(path.TrimEnd('\\')) is { Length: > 0 } parent)
-            text += "\t" + Escape(parent);
-        return new MenuItem(text, () => cmd.Navigate(path), path);
-    }
+    /// <summary>Folder entry: the name as text, with the parent folder as the dimmed <see cref="MenuItem.Detail"/>.</summary>
+    private static MenuItem FolderItem(string path, IMenuCommands cmd, bool showParent) =>
+        new(Escape(DisplayName(path)), () => cmd.Navigate(path), path, Detail: showParent ? ParentOf(path) : null);
 
     public static string DisplayName(string path)
     {
         string trimmed = path.TrimEnd('\\');
         string name = Path.GetFileName(trimmed);
         return string.IsNullOrEmpty(name) ? path : name;
+    }
+
+    private static string? ParentOf(string path)
+    {
+        string? parent = Path.GetDirectoryName(path.TrimEnd('\\'));
+        return string.IsNullOrEmpty(parent) ? null : parent;
     }
 
     private static IEnumerable<string> Distinct(IEnumerable<string> paths, string? exclude) =>
