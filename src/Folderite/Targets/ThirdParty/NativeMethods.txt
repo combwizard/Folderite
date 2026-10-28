@@ -1,0 +1,15 @@
+EnumWindows
+GetClassName
+GetWindowText
+GetWindowThreadProcessId
+GetWindowRect
+GetCursorPos
+IsChild
+IsWindowVisible
+SendMessageTimeout
+SEND_MESSAGE_TIMEOUT_FLAGS
+COPYDATASTRUCT
+WM_COPYDATA
+OpenProcess
+QueryFullProcessImageName
+CloseHandle
