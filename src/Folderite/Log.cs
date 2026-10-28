@@ -1,9 +1,9 @@
 namespace Folderite;
 
-/// <summary>Append-only error log next to the config (%APPDATA%\Folderite\folderite.log).</summary>
+/// <summary>Append-only error log next to the config (folderite.log in the resolved config directory).</summary>
 internal static class Log
 {
-    private static readonly string FilePath = Path.Combine(Config.ConfigStore.DefaultDirectory, "folderite.log");
+    private static string FilePath => Path.Combine(Config.ConfigLocation.Resolve(), Config.ConfigRelocator.LogFile);
 
     public static void Error(Exception ex) => Write($"ERROR {ex}");
 
@@ -13,9 +13,10 @@ internal static class Log
     {
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
-            if (File.Exists(FilePath) && new FileInfo(FilePath).Length > 1_000_000) File.Delete(FilePath);
-            File.AppendAllText(FilePath, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} {line}{Environment.NewLine}");
+            var path = FilePath;
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            if (File.Exists(path) && new FileInfo(path).Length > 1_000_000) File.Delete(path);
+            File.AppendAllText(path, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} {line}{Environment.NewLine}");
         }
         catch { }
     }

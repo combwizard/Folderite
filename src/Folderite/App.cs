@@ -186,6 +186,9 @@ internal sealed unsafe class App : IMenuCommands, IDisposable
             case Ipc.SetPaused:
                 if (_hook is not null) _hook.Paused = arg == "1";
                 return 1;
+            case Ipc.Exit:
+                PInvoke.PostQuitMessage(0);
+                return 1;
             default:
                 return 0;
         }

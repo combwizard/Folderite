@@ -26,7 +26,7 @@ internal sealed class TrayIcon : IDisposable
         _hwnd = new HWND(hwnd);
         _callbackMessage = callbackMessage;
         _tooltip = tooltip;
-        _icon = LoadFolderIcon();
+        _icon = LoadAppIcon();
         Add();
     }
 
@@ -129,6 +129,20 @@ internal sealed class TrayIcon : IDisposable
             };
         }
     }
+
+    // The exe's own icon at the small-icon size; the stock folder icon if that fails (e.g. no icon resource).
+    private static HICON LoadAppIcon()
+    {
+        int size = PInvoke.GetSystemMetrics(SYSTEM_METRICS_INDEX.SM_CXSMICON);
+        if (Environment.ProcessPath is { } exe &&
+            PrivateExtractIconsW(exe, 0, size, size, out var icon, out _, 1, 0) == 1 && icon != 0)
+            return new HICON(icon);
+        return LoadFolderIcon();
+    }
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
+    private static extern uint PrivateExtractIconsW(string file, int index, int cx, int cy,
+        out nint icon, out uint id, uint count, uint flags);
 
     private static HICON LoadFolderIcon()
     {

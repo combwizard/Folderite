@@ -8,6 +8,23 @@ using Folderite.Menu;
 
 namespace Folderite.Settings;
 
+/// <summary>The app icon (assets/icon.ico, a WPF resource) as an image source.</summary>
+public static class AppIcon
+{
+    // The 32 px frame: shown at 16 logical px it stays crisp at 100-200 % scaling without tracking DPI.
+    public static ImageSource Medium { get; } = Frame(32);
+
+    private static ImageSource Frame(int minSize)
+    {
+        var decoder = BitmapDecoder.Create(new Uri("pack://application:,,,/Folderite;component/Assets/icon.ico"),
+            BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+        var frame = decoder.Frames.OrderBy(f => f.PixelWidth).FirstOrDefault(f => f.PixelWidth >= minSize)
+            ?? decoder.Frames.OrderBy(f => f.PixelWidth).Last();
+        frame.Freeze();
+        return frame;
+    }
+}
+
 /// <summary>Attached properties used by the SettingRow style.</summary>
 public static class Setting
 {

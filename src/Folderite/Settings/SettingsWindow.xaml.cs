@@ -28,6 +28,7 @@ public partial class SettingsWindow : Window
     private readonly GeneralVm _general;
     private readonly MenuPreview _preview;
     private readonly Dictionary<string, FrameworkElement> _pageCache = new();
+    private volatile bool _storeReleased;
 
     internal SettingsWindow(ConfigStore store)
     {
@@ -36,13 +37,42 @@ public partial class SettingsWindow : Window
         _vm = new SettingsVm(store, action => Dispatcher.BeginInvoke(action));
         _vm.Load();
         _history = new HistoryVm(new TrayHistoryBackend(store.HistoryPath));
-        _general = new GeneralVm(store);
+        _general = new GeneralVm(store)
+        {
+            FlushPending = _vm.SaveNow,
+            ReleaseStore = ReleaseStore,
+            SetStatus = text => _vm.Status = text,
+        };
         _preview = new MenuPreview(this, store, _vm);
         DataContext = _vm;
 
         store.Changed += _vm.OnExternalChange;
         Nav.ItemsSource = Pages;
         Nav.SelectedIndex = 0;
+        Closed += (_, _) =>
+        {
+            _vm.Dispose();
+            _store.Dispose(); // this window owns its store
+        };
+    }
+
+    /// <summary>Selects a nav page by key ("general", "history", ...).</summary>
+    internal void ShowPage(string key)
+    {
+        int index = Array.FindIndex(Pages, p => p.Key == key);
+        if (index >= 0)
+            Nav.SelectedIndex = index;
+    }
+
+    internal void SetStatus(string text) => _vm.Status = text;
+
+    // Called (from a worker thread) just before the config files move: from here on this window must not write
+    // anything, because its store points at the old location.
+    private void ReleaseStore()
+    {
+        _storeReleased = true;
+        _store.Changed -= _vm.OnExternalChange;
+        _store.Dispose();
     }
 
     private void Nav_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -89,7 +119,9 @@ public partial class SettingsWindow : Window
     protected override void OnClosing(CancelEventArgs e)
     {
         _store.Changed -= _vm.OnExternalChange;
-        _vm.SaveNow();
+        // After a move the store is disposed but its Save would still write to the old location.
+        if (!_storeReleased)
+            _vm.SaveNow();
         base.OnClosing(e);
     }
 }

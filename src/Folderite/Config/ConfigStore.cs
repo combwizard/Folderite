@@ -42,16 +42,8 @@ public sealed class ConfigStore : IDisposable
         HistoryPath = Path.Combine(directory, HistoryFileName);
     }
 
-    /// <summary>Portable mode (config.json next to the exe) if present, else %APPDATA%\Folderite.</summary>
-    public static string DefaultDirectory
-    {
-        get
-        {
-            if (File.Exists(Path.Combine(AppContext.BaseDirectory, ConfigFileName)))
-                return AppContext.BaseDirectory;
-            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Folderite");
-        }
-    }
+    /// <summary>Portable mode (config.json next to the exe), else the directory chosen in Settings, else %APPDATA%\Folderite.</summary>
+    public static string DefaultDirectory => ConfigLocation.Resolve();
 
     public string Directory { get; }
     public string ConfigPath { get; }

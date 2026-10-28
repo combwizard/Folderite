@@ -15,12 +15,26 @@ internal static unsafe class Ipc
     public const string ClearHistory = "clear-history";
     public const string GetPaused = "get-paused";
     public const string SetPaused = "set-paused";
+    public const string Exit = "exit";
 
     private const nuint Magic = 0x464C4452; // "FLDR"
     private const uint MaxBytes = 64 * 1024;
     private const uint TimeoutMs = 1000;
 
     public static bool IsRunning => !PInvoke.FindWindow(WindowClass, null).IsNull;
+
+    /// <summary>Polls until the tray window is gone. False if it is still there after <paramref name="timeout"/>.</summary>
+    public static bool WaitForExit(TimeSpan timeout)
+    {
+        var deadline = Environment.TickCount64 + (long)timeout.TotalMilliseconds;
+        while (IsRunning)
+        {
+            if (Environment.TickCount64 >= deadline)
+                return false;
+            Thread.Sleep(100);
+        }
+        return true;
+    }
 
     /// <summary>Sends a command to the tray app. Null if it isn't running or the call timed out.</summary>
     public static nint? Send(string command, string? arg = null)

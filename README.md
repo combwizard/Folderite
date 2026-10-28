@@ -25,7 +25,7 @@ Settings rewrites `config.json` when it saves, so `//` comments in it are not ke
 
 ## Config
 
-`%APPDATA%\Folderite\config.json`. If `config.json` sits next to the exe, the app runs in portable mode and uses that one instead. The file reloads automatically when saved. `//` comments and trailing commas are allowed.
+`%APPDATA%\Folderite\config.json` by default. **Settings → General → Change location…** moves it, with `history.json`, to another folder (remembered in `HKCU\Software\Folderite\ConfigDirectory`); **Use default** moves it back. Choosing Folderite's own folder makes it **portable**: a `config.json` next to the exe always wins, so the settings travel with the folder. The file reloads automatically when saved. `//` comments and trailing commas are allowed.
 
 ```jsonc
 {

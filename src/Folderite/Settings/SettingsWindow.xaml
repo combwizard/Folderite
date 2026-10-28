@@ -1,7 +1,9 @@
 <Window x:Class="Folderite.Settings.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:s="clr-namespace:Folderite.Settings"
         Title="Folderite Settings"
+        Icon="pack://application:,,,/Folderite;component/Assets/icon.ico"
         Width="960" Height="640" MinWidth="760" MinHeight="480"
         WindowStartupLocation="CenterScreen">
     <!-- Content extends into the title bar (like Windows Settings); DWM still draws the caption buttons.
@@ -22,8 +24,8 @@
 
         <!-- Title bar strip: not hit-test visible in chrome, so it drags the window -->
         <StackPanel Orientation="Horizontal" Margin="22,0,0,0" VerticalAlignment="Center">
-            <TextBlock Style="{StaticResource Glyph}" Text="&#xE8B7;" FontSize="18"
-                       Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" />
+            <Image Source="{x:Static s:AppIcon.Medium}" Width="16" Height="16"
+                   RenderOptions.BitmapScalingMode="HighQuality" VerticalAlignment="Center" />
             <TextBlock Text="Folderite" FontSize="14" FontWeight="SemiBold" Margin="10,0,0,0"
                        VerticalAlignment="Center" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
         </StackPanel>

@@ -18,10 +18,8 @@ public sealed partial class GeneralVm : ObservableObject
     {
         ConfigPath = store.ConfigPath;
         ConfigDirectory = store.Directory;
-        IsPortable = string.Equals(
-            Path.TrimEndingDirectorySeparator(Path.GetFullPath(store.Directory)),
-            Path.TrimEndingDirectorySeparator(Path.GetFullPath(AppContext.BaseDirectory)),
-            StringComparison.OrdinalIgnoreCase);
+        IsPortable = ConfigLocation.IsPortable;
+        LocationKind = ConfigMove.KindOf(IsPortable, ConfigDirectory, ConfigLocation.DefaultDirectory);
         Version = ReadVersion();
         RefreshStatus();
     }
@@ -30,6 +28,36 @@ public sealed partial class GeneralVm : ObservableObject
     public string ConfigDirectory { get; }
     public bool IsPortable { get; }
     public string Version { get; }
+
+    internal LocationKind LocationKind { get; }
+    public string LocationCaption => ConfigMove.Caption(LocationKind);
+    public string PortableNote => ConfigMove.PortableNote;
+    public bool CanChangeLocation => true;
+    /// <summary>"Use default" moves a custom or portable config back to %APPDATA%\Folderite.</summary>
+    public bool CanUseDefault => LocationKind != LocationKind.Default;
+
+    // Wired by SettingsWindow: it owns the SettingsVm and the config store.
+    internal Action? FlushPending { get; set; }
+    internal Action? ReleaseStore { get; set; }
+    internal Action<string>? SetStatus { get; set; }
+
+    /// <summary>
+    /// Moves the config to <paramref name="target"/>: flush edits, then (off the UI thread) stop the tray, release the
+    /// store, move the files, switch the registry override and restart the tray. The caller handles dialogs and reopening.
+    /// </summary>
+    internal async Task<MoveOutcome> MoveConfigAsync(string target, RelocateMode mode)
+    {
+        FlushPending?.Invoke();
+        SetStatus?.Invoke("Moving settings…");
+
+        var from = ConfigDirectory;
+        var release = ReleaseStore ?? (() => { });
+        var outcome = await Task.Run(() => ConfigMove.Execute(from, target, mode, release));
+
+        if (outcome.Status != MoveStatus.Moved)
+            SetStatus?.Invoke("Settings were not moved");
+        return outcome;
+    }
 
     [ObservableProperty]
     private bool isTrayRunning;
