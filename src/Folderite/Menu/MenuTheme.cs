@@ -60,7 +60,7 @@ internal sealed unsafe class MenuTheme : IDisposable
         IconGap = Scale(10);
         ColumnGap = Scale(24);
         ChevronWidth = Scale(20);
-        MaxDetailWidth = Scale(320);
+        MaxDetailWidth = Scale(200);
         int icon = PInvoke.GetSystemMetricsForDpi(SYSTEM_METRICS_INDEX.SM_CXSMICON, (uint)dpi);
         IconSize = icon > 0 ? icon : Scale(16);
 

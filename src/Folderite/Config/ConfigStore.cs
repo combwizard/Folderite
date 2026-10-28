@@ -126,6 +126,17 @@ public sealed class ConfigStore : IDisposable
         }
     }
 
+    /// <summary>Replaces <see cref="Current"/> with <paramref name="config"/> and writes it to config.json.</summary>
+    public void Save(AppConfig config)
+    {
+        lock (_lock) _current = config;
+        Save();
+    }
+
+    /// <summary>Deep copy of <paramref name="config"/>.</summary>
+    public static AppConfig Clone(AppConfig config) =>
+        JsonSerializer.Deserialize<AppConfig>(JsonSerializer.Serialize(config, JsonOptions), JsonOptions)!;
+
     /// <summary>Starts watching config.json for external edits.</summary>
     public void StartWatching()
     {

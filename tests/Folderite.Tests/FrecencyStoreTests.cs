@@ -326,4 +326,46 @@ public sealed class FrecencyStoreTests : IDisposable
 
         Assert.Contains(@"C:\Fresh", store.Top(1000));
     }
+
+    [Fact]
+    public void Entries_OrderMatchesTop_AndCarriesScore()
+    {
+        Seed((@"C:\Old", 10, Start - TimeSpan.FromDays(30)),
+            (@"C:\Recent", 2, Start - TimeSpan.FromMinutes(5)),
+            (@"C:\Today", 3, Start - TimeSpan.FromHours(5)));
+        var store = NewStore();
+        store.Load();
+
+        var entries = store.Entries();
+
+        Assert.Equal(store.Top(10), entries.Select(e => e.Path));
+        Assert.Equal(new[] { 8.0, 6.0, 2.5 }, entries.Select(e => e.Score));
+        Assert.Equal(Start - TimeSpan.FromMinutes(5), entries[0].LastAccess);
+    }
+
+    [Fact]
+    public void Entries_SkipsExcludedFolders()
+    {
+        var store = NewStore();
+        store.Record(@"C:\Keep");
+        store.Record(@"C:\Secret\Stuff");
+        store.SetExcludes([@"C:\Secret\*"]);
+
+        Assert.Equal(new[] { @"C:\Keep" }, store.Entries().Select(e => e.Path));
+    }
+
+    [Fact]
+    public void Clear_RemovesEverythingAndMarksDirty()
+    {
+        var store = NewStore();
+        store.Record(@"C:\A");
+        store.Save();
+        Assert.False(store.IsDirty);
+
+        store.Clear();
+
+        Assert.True(store.IsDirty);
+        Assert.Empty(store.Entries());
+        Assert.Empty(store.Top(10));
+    }
 }

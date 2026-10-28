@@ -5,6 +5,7 @@ using Folderite.History;
 using Folderite.Hooks;
 using Folderite.Interop;
 using Folderite.Menu;
+using Folderite.Settings;
 using Folderite.Targets;
 using Folderite.Targets.ThirdParty;
 using Folderite.Tray;
@@ -20,7 +21,7 @@ internal sealed unsafe class App : IMenuCommands, IDisposable
     private const uint TrayMessage = PInvoke.WM_APP + 2;
     private const uint DispatchMessage = PInvoke.WM_APP + 3;
     private const nuint SaveTimerId = 0x4655;
-    private const string WindowClass = "FolderiteMessageWindow";
+    private const string WindowClass = Ipc.WindowClass;
 
     private readonly WNDPROC _wndProc;
     private readonly ConcurrentQueue<Action> _dispatchQueue = new();
@@ -140,6 +141,11 @@ internal sealed unsafe class App : IMenuCommands, IDisposable
                 case DispatchMessage:
                     while (_dispatchQueue.TryDequeue(out var action)) action();
                     return (LRESULT)0;
+                case PInvoke.WM_COPYDATA:
+                    // No ChangeWindowMessageFilterEx: the settings process runs at the same integrity level.
+                    if (Ipc.TryHandle(lParam, out var ipcCommand, out var ipcArg))
+                        return (LRESULT)HandleIpc(ipcCommand, ipcArg);
+                    break;
                 case PInvoke.WM_TIMER when wParam.Value == HistoryTracker.TimerId:
                     _tracker?.Flush();
                     return (LRESULT)0;
@@ -158,6 +164,31 @@ internal sealed unsafe class App : IMenuCommands, IDisposable
             Log.Error(ex);
         }
         return PInvoke.DefWindowProc(hwnd, msg, wParam, lParam);
+    }
+
+    private nint HandleIpc(string command, string? arg)
+    {
+        switch (command)
+        {
+            case Ipc.FlushHistory:
+                if (_history.IsDirty) _history.Save();
+                return 1;
+            case Ipc.RemoveHistory:
+                if (arg is not null) _history.Remove(arg);
+                _history.Save();
+                return 1;
+            case Ipc.ClearHistory:
+                _history.Clear();
+                _history.Save();
+                return 1;
+            case Ipc.GetPaused:
+                return _hook?.Paused == true ? 1 : 0;
+            case Ipc.SetPaused:
+                if (_hook is not null) _hook.Paused = arg == "1";
+                return 1;
+            default:
+                return 0;
+        }
     }
 
     private void PostToUi(Action action)
@@ -217,6 +248,7 @@ internal sealed unsafe class App : IMenuCommands, IDisposable
             new MenuItem(Autostart.IsEnabled ? "Start with Windows: &On" : "Start with Windows: &Off",
                 () => Autostart.Set(!Autostart.IsEnabled)),
             MenuSeparator.Instance,
+            new MenuItem("&Settings…", OpenSettings),
             new MenuItem("&Edit config…", EditConfig),
             new MenuItem("Open config &folder", () => ExplorerAdapter.OpenNewWindow(_config.Directory)),
             new MenuItem("Reloa&d", Reload),
@@ -265,6 +297,26 @@ internal sealed unsafe class App : IMenuCommands, IDisposable
     {
         Cfg.Favorites.Add(new FavoriteEntry { Name = MenuComposer.DisplayName(path).Replace("&", "&&"), Path = path });
         _config.Save();
+    }
+
+    public void OpenSettings()
+    {
+        HWND existing = PInvoke.FindWindow(null, SettingsApp.WindowTitle);
+        if (!existing.IsNull)
+        {
+            if (PInvoke.IsIconic(existing)) PInvoke.ShowWindow(existing, SHOW_WINDOW_CMD.SW_RESTORE);
+            PInvoke.SetForegroundWindow(existing);
+            return;
+        }
+
+        try
+        {
+            Process.Start(new ProcessStartInfo(Environment.ProcessPath!, "--settings") { UseShellExecute = false });
+        }
+        catch (Exception ex)
+        {
+            _tray?.ShowBalloon("Folderite", "Could not open settings: " + ex.Message);
+        }
     }
 
     public void EditConfig()

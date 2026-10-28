@@ -16,7 +16,7 @@ internal interface IMenuCommands
     void RunAction(CustomAction action, string path);
     void CopyPath(string path);
     void AddFavorite(string path);
-    void EditConfig();
+    void OpenSettings();
     void Reload();
 }
 
@@ -43,7 +43,8 @@ internal static class MenuComposer
                 actions.Add(MenuSeparator.Instance);
                 actions.Add(new MenuItem("&Add to favorites", () => cmd.AddFavorite(current)));
             }
-            nodes.Add(new SubMenu(Escape(DisplayName(current)), actions, current, Detail: ParentOf(current)));
+            // No parent path here: it's the folder the menu was opened over, and a long path made the whole menu wide.
+            nodes.Add(new SubMenu(Escape(DisplayName(current)), actions, current));
             nodes.Add(MenuSeparator.Instance);
         }
 
@@ -75,7 +76,7 @@ internal static class MenuComposer
         }
 
         nodes.Add(MenuSeparator.Instance);
-        nodes.Add(new MenuItem("&Edit config…", cmd.EditConfig));
+        nodes.Add(new MenuItem("&Settings…", cmd.OpenSettings));
         nodes.Add(new MenuItem("Reloa&d", cmd.Reload));
         return nodes;
     }

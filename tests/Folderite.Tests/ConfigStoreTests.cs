@@ -120,4 +120,42 @@ public sealed class ConfigStoreTests : IDisposable
         Assert.False(config.Favorites[1].IsGroup);
         Assert.Equal(@"C:\Top", config.Favorites[1].Path);
     }
+
+    [Fact]
+    public void SaveConfig_ReplacesCurrentAndPersists()
+    {
+        using var store = new ConfigStore(_temp.Root);
+        store.Load();
+        var replacement = new AppConfig
+        {
+            RecentCount = 3,
+            Favorites = [new() { Name = "&Only", Path = @"C:\Only" }],
+        };
+
+        store.Save(replacement);
+
+        Assert.Same(replacement, store.Current);
+        using var second = new ConfigStore(_temp.Root);
+        var loaded = second.Load();
+        Assert.Equal(3, loaded.RecentCount);
+        var favorite = Assert.Single(loaded.Favorites);
+        Assert.Equal(@"C:\Only", favorite.Path);
+    }
+
+    [Fact]
+    public void Clone_IsDeepCopy()
+    {
+        var original = new AppConfig
+        {
+            Favorites = [new() { Name = "Work", Items = [new() { Name = "&Repo", Path = @"C:\Repo" }] }],
+        };
+
+        var clone = ConfigStore.Clone(original);
+        clone.Favorites[0].Items![0].Path = @"C:\Changed";
+        clone.Favorites.Add(new() { Name = "&Extra", Path = @"C:\Extra" });
+
+        Assert.NotSame(original, clone);
+        Assert.Single(original.Favorites);
+        Assert.Equal(@"C:\Repo", original.Favorites[0].Items![0].Path);
+    }
 }

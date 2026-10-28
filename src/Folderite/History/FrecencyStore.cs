@@ -3,6 +3,8 @@ using System.Text.RegularExpressions;
 
 namespace Folderite.History;
 
+public readonly record struct HistoryEntry(string Path, double Score, DateTimeOffset LastAccess);
+
 /// <summary>zoxide-style frecency store of visited folders, persisted as JSON.</summary>
 public sealed class FrecencyStore
 {
@@ -186,6 +188,31 @@ public sealed class FrecencyStore
                 .Take(count)
                 .Select(e => e.Path)
                 .ToList();
+        }
+    }
+
+    /// <summary>All non-excluded folders ordered like <see cref="Top"/>, with the score it sorts by.</summary>
+    public IReadOnlyList<HistoryEntry> Entries()
+    {
+        lock (_lock)
+        {
+            var now = _time.GetUtcNow();
+            return _entries.Values
+                .Where(e => !IsExcluded(e.Path))
+                .Select(e => new HistoryEntry(e.Path, Score(e, now), e.LastAccess))
+                .OrderByDescending(e => e.Score)
+                .ThenByDescending(e => e.LastAccess)
+                .ToList();
+        }
+    }
+
+    /// <summary>Removes every folder from the store.</summary>
+    public void Clear()
+    {
+        lock (_lock)
+        {
+            _entries.Clear();
+            _dirty = true;
         }
     }
 

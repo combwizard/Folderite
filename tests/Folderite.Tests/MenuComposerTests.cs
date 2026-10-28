@@ -55,14 +55,14 @@ public sealed class MenuComposerTests
         public List<string> Copied { get; } = [];
         public List<string> Added { get; } = [];
         public List<(string Name, string Path)> Ran { get; } = [];
-        public int EditConfigCalls { get; private set; }
+        public int OpenSettingsCalls { get; private set; }
         public int ReloadCalls { get; private set; }
 
         public void Navigate(string path) => Navigated.Add(path);
         public void RunAction(CustomAction action, string path) => Ran.Add((action.Name, path));
         public void CopyPath(string path) => Copied.Add(path);
         public void AddFavorite(string path) => Added.Add(path);
-        public void EditConfig() => EditConfigCalls++;
+        public void OpenSettings() => OpenSettingsCalls++;
         public void Reload() => ReloadCalls++;
     }
 
@@ -251,6 +251,16 @@ public sealed class MenuComposerTests
     }
 
     [Fact]
+    public void CurrentFolderSubmenu_HasNoDetail()
+    {
+        var nodes = Build(Config(), Ctx(current: @"C:\Work\Reports"));
+
+        var sub = Assert.IsType<SubMenu>(nodes[0]);
+        Assert.Equal("Reports", sub.Text);
+        Assert.Null(sub.Detail);
+    }
+
+    [Fact]
     public void OpenWindows_ItemTextIsNameAndDetailIsParent()
     {
         var config = Config();
@@ -381,20 +391,20 @@ public sealed class MenuComposerTests
     }
 
     [Fact]
-    public void Build_EndsWithEditConfigAndReload_InvokingCallsCommands()
+    public void Build_EndsWithSettingsAndReload_InvokingCallsCommands()
     {
         var cmd = new FakeCommands();
         var nodes = Build(Config(), Ctx(Current), cmd);
 
-        var edit = Assert.IsType<MenuItem>(nodes[^2]);
+        var settings = Assert.IsType<MenuItem>(nodes[^2]);
         var reload = Assert.IsType<MenuItem>(nodes[^1]);
-        Assert.Equal("&Edit config…", edit.Text);
+        Assert.Equal("&Settings…", settings.Text);
         Assert.Equal("Reloa&d", reload.Text);
 
-        edit.OnInvoke();
+        settings.OnInvoke();
         reload.OnInvoke();
 
-        Assert.Equal(1, cmd.EditConfigCalls);
+        Assert.Equal(1, cmd.OpenSettingsCalls);
         Assert.Equal(1, cmd.ReloadCalls);
     }
 }

@@ -4,6 +4,10 @@ Middle-click in a file manager or Open/Save dialog to pop up a folder menu: favo
 
 Supported: Windows Explorer (incl. Win11 tabs), common file dialogs, Directory Opus, Total Commander, XYplorer, and the desktop (opens a new Explorer window).
 
+## Requirements
+
+Windows 10 1903 or later (Windows 11 recommended), and the [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) (x64).
+
 ## Build & run
 
 ```bat
@@ -11,7 +15,13 @@ dotnet build
 src\Folderite\bin\Debug\net10.0-windows\win-x64\Folderite.exe
 ```
 
-Runs in the tray. Right-click the tray icon for Pause, Start with Windows, Edit config, and Exit. Left-click opens the folder menu; picking a folder there opens a new Explorer window.
+Runs in the tray. Right-click the tray icon for Settings, Pause, Start with Windows, Edit config, and Exit. Left-click opens the folder menu; picking a folder there opens a new Explorer window.
+
+## Settings
+
+**Settings…** (tray menu, or the bottom of the folder menu) opens an editor for everything below: favorites (drag to reorder or nest, drop folders from Explorer), actions, menu sections, exclusions, your folder history, and Start with Windows / Pause. Changes save as you make them and the running app picks them up immediately. **Preview menu** shows the real menu with the current settings.
+
+Settings rewrites `config.json` when it saves, so `//` comments in it are not kept. If the file has an error, Settings stops saving until it is fixed.
 
 ## Config
 
@@ -51,7 +61,9 @@ Runs in the tray. Right-click the tray icon for Pause, Start with Windows, Edit 
 | File dialogs: breadcrumb caption to read; filename box + OK to navigate (address bar for folder pickers) | `Targets/FileDialogAdapter.cs` |
 | Opus (`dopusrt`), TC (`WM_COPYDATA "CD"`), XYplorer (`WM_COPYDATA ::goto`) | `Targets/ThirdParty/` |
 | History from WinEvent name/foreground changes, zoxide-style frecency | `History/` |
-| Menu model → native popup with shell icons | `Menu/` |
+| Menu model → owner-drawn native popup (dark mode, shell icons) | `Menu/` |
+| Settings window (`Folderite.exe --settings`, WPF + Fluent), separate process | `Settings/` |
+| Settings ↔ tray app: pause and history over `WM_COPYDATA` | `Interop/Ipc.cs` |
 
 ## Manual test checklist
 
