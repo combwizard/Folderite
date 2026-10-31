@@ -69,3 +69,16 @@ GlobalLock
 GlobalUnlock
 GlobalFree
 EnumWindows
+// Clipboard snapshot/restore (BlenderAdapter borrows the clipboard)
+EnumClipboardFormats
+GlobalSize
+RegisterClipboardFormat
+GetClipboardSequenceNumber
+// Synthesized input (BlenderAdapter)
+SendInput
+MapVirtualKey
+GetClientRect
+ClientToScreen
+GetSystemMetrics
+GetCursorPos
+SetCursorPos

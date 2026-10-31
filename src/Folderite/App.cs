@@ -63,6 +63,7 @@ internal sealed unsafe class App : IMenuCommands, IDisposable
             new DopusAdapter(),
             new TotalCommanderAdapter(),
             new XYplorerAdapter(),
+            new BlenderAdapter(_hwnd),
             new DesktopAdapter(() => Cfg.EnableOnDesktop),
         ]);
         ApplyConfig();

@@ -2,7 +2,7 @@
 
 Middle-click in a file manager or Open/Save dialog to pop up a folder menu: favorites, folders open in other windows, recent folders (frecency-ranked), and the folder on the clipboard. Picking one sends *that* window there.
 
-Supported: Windows Explorer (incl. Win11 tabs), common file dialogs, Directory Opus, Total Commander, XYplorer, and the desktop (opens a new Explorer window).
+Supported: Windows Explorer (incl. Win11 tabs), common file dialogs, Directory Opus, Total Commander, XYplorer, Blender's file browser window, and the desktop (opens a new Explorer window).
 
 ## Requirements
 
@@ -60,6 +60,7 @@ Settings rewrites `config.json` when it saves, so `//` comments in it are not ke
 | Explorer: Shell.Application COM, active Win11 tab via `ShellTabWindowClass` | `Targets/ExplorerAdapter.cs` |
 | File dialogs: breadcrumb caption to read; filename box + OK to navigate (address bar for folder pickers) | `Targets/FileDialogAdapter.cs` |
 | Opus (`dopusrt`), TC (`WM_COPYDATA "CD"`), XYplorer (`WM_COPYDATA ::goto`) | `Targets/ThirdParty/` |
+| Blender "File View" window: synthesized Ctrl+F, Shift+Tab, Ctrl+A, Ctrl+V, Enter into the path field (clipboard and cursor restored); current folder can't be read | `Targets/ThirdParty/BlenderAdapter.cs` |
 | History from WinEvent name/foreground changes, zoxide-style frecency | `History/` |
 | Menu model → owner-drawn native popup (dark mode, shell icons) | `Menu/` |
 | Settings window (`Folderite.exe --settings`, WPF + Fluent), separate process | `Settings/` |
@@ -74,5 +75,6 @@ Settings rewrites `config.json` when it saves, so `//` comments in it are not ke
 - [ ] Directory Opus dual pane: clicked side navigates
 - [ ] Total Commander: left/right panel, non-ASCII path *(untested so far)*
 - [ ] XYplorer: `::goto` with spaces *(untested so far)*
+- [ ] Blender 5.x File View (Open, Import with options panel, folder picker): navigates from a click on the bookmarks and on the file list; clipboard (text and image) comes back; typed filename is kept
 - [ ] Middle-click elsewhere (browser tab, editor) still works normally
 - [ ] Elevated Explorer/dialog: fails gracefully unless Folderite runs elevated
