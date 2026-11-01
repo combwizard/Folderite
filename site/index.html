@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Folderite - a middle-click folder menu for Windows</title>
+<meta name="description" content="Middle-click in Explorer or any Open/Save dialog to jump to your favorite, open, recent or copied folders. Free and open source (MIT), for Windows 10 and 11.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f5f6f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141416" media="(prefers-color-scheme: dark)">
+<meta property="og:title" content="Folderite - a middle-click folder menu for Windows">
+<meta property="og:description" content="Middle-click in Explorer or any Open/Save dialog to jump to your favorite, open, recent or copied folders. Free and open source.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://combwizard.github.io/folderite/">
+<meta property="og:image" content="https://combwizard.github.io/folderite/images/menu-light.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Folderite - a middle-click folder menu for Windows">
+<meta name="twitter:description" content="Middle-click in Explorer or any Open/Save dialog to jump to your favorite, open, recent or copied folders. Free and open source.">
+<meta name="twitter:image" content="https://combwizard.github.io/folderite/images/menu-light.png">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="stylesheet" href="styles.css">
+<script src="site.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<svg class="sprite" width="0" height="0" aria-hidden="true" focusable="false">
+  <symbol id="gh" viewBox="0 0 16 16"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></symbol>
+</svg>
+
+<header class="top">
+  <div class="top-inner">
+    <a class="brand" href="#"><img src="favicon.png" alt="" width="30" height="30">Folderite</a>
+    <nav class="nav" aria-label="Page">
+      <a href="#features">Features</a>
+      <a href="#apps">Apps</a>
+      <a href="#install">Install</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <a class="btn gh" href="https://github.com/combwizard/folderite" aria-label="Folderite on GitHub"><svg class="gh-mark" width="18" height="18" aria-hidden="true"><use href="#gh"/></svg><span class="gh-label">GitHub</span></a>
+    <a class="btn primary" href="https://github.com/combwizard/folderite/releases/latest">Download</a>
+    <span class="progress" aria-hidden="true"></span>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero-wrap" id="hero">
+    <div class="hero-bg" aria-hidden="true">
+      <div class="layer" data-depth="0.3"><span class="orb orb-a"></span><span class="orb orb-b"></span></div>
+      <div class="layer" data-depth="0.15"><span class="hero-grid"></span></div>
+      <span class="hero-spot"></span>
+    </div>
+    <div class="hero">
+      <div class="hero-copy">
+        <p class="badge"><span class="badge-dot" aria-hidden="true"></span>Free · Open source · MIT</p>
+        <h1>Folderite</h1>
+        <p class="tagline">A middle-click folder menu for Windows</p>
+        <p class="lede"><strong>Middle-click</strong> in Explorer or any Open/Save dialog and a menu of your folders opens at the cursor: favorites, folders open in other windows, recent ones and the one on the clipboard. Pick one and that window goes there.</p>
+        <div class="btn-row">
+          <a class="btn primary big" href="https://github.com/combwizard/folderite/releases/latest">Download <span class="ver" data-version hidden></span></a>
+          <a class="btn big gh" href="https://github.com/combwizard/folderite"><svg class="gh-mark" width="20" height="20" aria-hidden="true"><use href="#gh"/></svg>View on GitHub</a>
+        </div>
+        <ul class="compat" aria-label="Requirements">
+          <li>Windows 10 1903+ / 11</li>
+          <li>.NET 10 Desktop Runtime</li>
+          <li>MIT license</li>
+        </ul>
+      </div>
+      <div class="hero-art">
+        <figure class="shot shot-back" data-depth="0.12">
+          <picture>
+            <source srcset="images/settings-dark.png" media="(prefers-color-scheme: dark)">
+            <img src="images/settings-light.png" alt="The Folderite Settings window on the Favorites page" width="1020" height="700">
+          </picture>
+        </figure>
+        <figure class="shot shot-front" data-depth="-0.04">
+          <picture>
+            <source srcset="images/menu-dark.png" media="(prefers-color-scheme: dark)">
+            <img src="images/menu-light.png" alt="The Folderite menu over an Explorer window: the current folder, favorites, open windows, recent folders and the clipboard folder" width="1100" height="800">
+          </picture>
+        </figure>
+        <span class="chip chip-1" data-depth="-0.16" aria-hidden="true"><i>★</i>Favorites</span>
+        <span class="chip chip-2" data-depth="-0.24" aria-hidden="true"><i>⧉</i>Open windows</span>
+        <span class="chip chip-3" data-depth="-0.1" aria-hidden="true"><i>↺</i>Recent</span>
+        <span class="chip chip-4" data-depth="-0.2" aria-hidden="true"><i>⎘</i>Clipboard</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="strip">
+    <span class="strip-label">Works in</span>
+    <ul aria-label="Supported apps">
+      <li>Windows Explorer</li>
+      <li>Open &amp; Save dialogs</li>
+      <li>Directory Opus</li>
+      <li>Total Commander</li>
+      <li>XYplorer</li>
+      <li>Blender</li>
+      <li>The desktop</li>
+    </ul>
+  </div>
+
+  <section class="section" id="features">
+    <header class="section-head">
+      <p class="eyebrow">Features</p>
+      <h2>Your folders, one click away</h2>
+    </header>
+
+    <article class="feature">
+      <div class="feature-copy">
+        <p class="feature-num">01</p>
+        <h3>A folder menu at the cursor</h3>
+        <p>Middle-click in an Explorer window and the menu opens right at the cursor. It lists your favorites, the folders open in your other windows, your recent folders and a folder path you copied. Pick one and the window you clicked goes there.</p>
+        <p class="feature-sub">Windows 11 tabs work too: the active tab navigates, and middle-clicking a tab still closes it.</p>
+      </div>
+      <figure class="feature-media">
+        <span class="glow" aria-hidden="true"></span>
+        <div class="tilt" data-depth="-0.05">
+          <div class="frame">
+            <picture>
+              <source srcset="images/explorer-still-dark.png" media="(prefers-reduced-motion: reduce) and (prefers-color-scheme: dark)">
+              <source srcset="images/explorer-still-light.png" media="(prefers-reduced-motion: reduce)">
+              <source srcset="images/explorer-dark.gif" media="(prefers-color-scheme: dark)">
+              <img src="images/explorer-light.gif" alt="Middle-clicking in Explorer, picking Work > Specs, then a recent folder" width="1100" height="800" loading="lazy">
+            </picture>
+          </div>
+        </div>
+      </figure>
+    </article>
+
+    <article class="feature flip">
+      <div class="feature-copy">
+        <p class="feature-num">02</p>
+        <h3>Open and Save dialogs</h3>
+        <p>Any app that uses the standard Windows file dialog gets the same menu: Notepad, Office, your browser. The dialog jumps to the folder you pick, and the file name you already typed stays put.</p>
+        <p class="feature-sub">In folder pickers, picking a folder navigates there. It doesn't accept the folder for you.</p>
+      </div>
+      <figure class="feature-media">
+        <span class="glow" aria-hidden="true"></span>
+        <div class="tilt" data-depth="-0.05">
+          <div class="frame">
+            <picture>
+              <source srcset="images/save-dialog-still-dark.png" media="(prefers-reduced-motion: reduce) and (prefers-color-scheme: dark)">
+              <source srcset="images/save-dialog-still-light.png" media="(prefers-reduced-motion: reduce)">
+              <source srcset="images/save-dialog-dark.gif" media="(prefers-color-scheme: dark)">
+              <img src="images/save-dialog-light.gif" alt="Middle-clicking in a Save As dialog and picking Work > Reports; the typed file name stays" width="1100" height="800" loading="lazy">
+            </picture>
+          </div>
+        </div>
+      </figure>
+    </article>
+
+    <article class="feature">
+      <div class="feature-copy">
+        <p class="feature-num">03</p>
+        <h3>Recent folders, ranked by use</h3>
+        <p>Folderite notes the folders you visit in any supported file manager and ranks them by how often and how recently you went there, the way zoxide does. Your everyday folders rise to the top of Recent without you curating anything.</p>
+        <p class="feature-sub">Keep folders out with patterns like <code>C:\Windows\*</code> or <code>*\node_modules\*</code> under Settings&nbsp;›&nbsp;Exclusions. Remove entries or clear the list under Settings&nbsp;›&nbsp;History.</p>
+      </div>
+      <figure class="feature-media">
+        <span class="glow" aria-hidden="true"></span>
+        <div class="tilt" data-depth="-0.05">
+          <div class="frame recent" role="img" aria-label="A ranked list of recent folders with frecency bars. A folder inside node_modules is crossed out as excluded.">
+            <div class="recent-head"><b>Recent</b><span>score = visits × recency</span></div>
+            <ol>
+              <li><span class="folder"></span><span class="name">aurora-web<span class="path">X:\Projects</span></span><span class="bar"><i style="--w: 94%"></i></span></li>
+              <li><span class="folder"></span><span class="name">Reports<span class="path">X:\Work</span></span><span class="bar"><i style="--w: 71%"></i></span></li>
+              <li><span class="folder"></span><span class="name">Iceland trip<span class="path">X:\Photos\2026</span></span><span class="bar"><i style="--w: 52%"></i></span></li>
+              <li><span class="folder"></span><span class="name">Taxes 2026<span class="path">X:\Documents</span></span><span class="bar"><i style="--w: 34%"></i></span></li>
+              <li class="excluded"><span class="folder"></span><span class="name">.bin<span class="path">X:\Projects\aurora-web\node_modules</span></span><span class="tag">excluded</span></li>
+              <li><span class="folder"></span><span class="name">installers<span class="path">X:\Downloads</span></span><span class="bar"><i style="--w: 15%"></i></span></li>
+            </ol>
+            <div class="multipliers" aria-hidden="true">
+              <span>&lt; 1 hour <b>×4</b></span><span>&lt; 1 day <b>×2</b></span><span>&lt; 1 week <b>×½</b></span><span>older <b>×¼</b></span>
+            </div>
+          </div>
+        </div>
+      </figure>
+    </article>
+
+    <article class="feature flip">
+      <div class="feature-copy">
+        <p class="feature-num">04</p>
+        <h3>A settings window</h3>
+        <p>In Settings you drag favorites to reorder them or nest them in groups, drop folders in from Explorer, add your own actions next to the built-in <em>Open terminal here</em>, and choose which sections the menu shows. Changes apply as soon as you make them, and <em>Preview menu</em> shows you the real menu.</p>
+        <p class="feature-sub">Rather edit text? It's all in one <code>config.json</code>. Move it next to the exe and Folderite becomes portable.</p>
+      </div>
+      <figure class="feature-media">
+        <span class="glow" aria-hidden="true"></span>
+        <div class="tilt" data-depth="-0.05">
+          <div class="frame">
+            <picture>
+              <source srcset="images/settings-dark.png" media="(prefers-color-scheme: dark)">
+              <img src="images/settings-light.png" alt="The Settings window on the Favorites page" width="1020" height="700" loading="lazy">
+            </picture>
+          </div>
+        </div>
+      </figure>
+    </article>
+  </section>
+
+  <section class="section" id="apps">
+    <header class="section-head">
+      <p class="eyebrow">Supported apps</p>
+      <h2>Where it works</h2>
+      <p class="sub">Everywhere else, middle-click works as usual.</p>
+    </header>
+    <ul class="apps">
+      <li>
+        <h3><span class="app-ico"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 5.5a1.5 1.5 0 0 1 1.5-1.5h3.6l1.8 2H16a1.5 1.5 0 0 1 1.5 1.5v7A1.5 1.5 0 0 1 16 16H4a1.5 1.5 0 0 1-1.5-1.5z"/></svg></span>Windows Explorer</h3>
+        <p>Navigates the window you clicked, or its active tab on Windows 11.</p>
+      </li>
+      <li>
+        <h3><span class="app-ico"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="3.5" width="15" height="13" rx="1.5"/><path d="M2.5 7h15M5.5 13.5h6M13.5 13.5h1.5"/></svg></span>Open &amp; Save dialogs</h3>
+        <p>The standard Windows file dialogs and folder pickers, in any app. Your typed file name is kept.</p>
+      </li>
+      <li>
+        <h3><span class="app-ico"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="3.5" width="15" height="13" rx="1.5"/><path d="M10 3.5v13"/></svg></span>Directory Opus</h3>
+        <p>In a dual-pane lister, the side you clicked navigates.</p>
+      </li>
+      <li>
+        <h3><span class="app-ico"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="3.5" width="15" height="13" rx="1.5"/><path d="M10 3.5v13M4.5 7h3.5M12 7h3.5"/></svg></span>Total Commander</h3>
+        <p>Changes the folder of the panel you clicked, left or right. Newer and less tested.</p>
+      </li>
+      <li>
+        <h3><span class="app-ico"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M3 6.5h14M3 10h9M3 13.5h11"/><path d="m14 11.5 3 2-3 2"/></svg></span>XYplorer</h3>
+        <p>Jumps with XYplorer's own <code>::goto</code> command. Newer and less tested.</p>
+      </li>
+      <li>
+        <h3><span class="app-ico"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="11.5" cy="11" r="5"/><circle cx="11.5" cy="11" r="1.8"/><path d="M6.5 11 2.5 8M8 7 5 4.5" stroke-linecap="round"/></svg></span>Blender</h3>
+        <p>The File View window: Open, Import and folder pickers. Your clipboard is put back afterwards.</p>
+      </li>
+      <li>
+        <h3><span class="app-ico"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><rect x="2.5" y="3.5" width="15" height="10" rx="1.5"/><path d="M7.5 16.5h5M10 13.5v3"/></svg></span>The desktop</h3>
+        <p>Middle-click the desktop and the folder you pick opens in a new Explorer window.</p>
+      </li>
+      <li>
+        <h3><span class="app-ico"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M2.5 15.5h15"/><rect x="11.5" y="11" width="3" height="3" rx=".6"/><path d="M6 11.5 10 7.5M10 7.5H7M10 7.5v3"/></svg></span>The tray icon</h3>
+        <p>Left-click it for your folders from anywhere: favorites, open windows, recent and clipboard. Your pick opens in a new Explorer window.</p>
+      </li>
+    </ul>
+  </section>
+
+  <section class="section" id="install">
+    <header class="section-head">
+      <p class="eyebrow">Install</p>
+      <h2>Getting started</h2>
+    </header>
+    <ol class="steps">
+      <li>
+        <h3>Get the .NET 10 Desktop Runtime</h3>
+        <p>Install the <a href="https://dotnet.microsoft.com/download/dotnet/10.0">.NET 10 Desktop Runtime (x64)</a> from Microsoft if you don't have it yet.</p>
+      </li>
+      <li>
+        <h3>Download and unzip</h3>
+        <p>Grab <code>Folderite-&lt;version&gt;-win-x64.zip</code> from the <a href="https://github.com/combwizard/folderite/releases/latest">latest release</a> and unzip it to any folder you like.</p>
+      </li>
+      <li>
+        <h3>Run Folderite.exe</h3>
+        <p>It sits in the tray. Right-click the icon for Settings, Pause and <em>Start with Windows</em>, then middle-click in a folder window.</p>
+      </li>
+    </ol>
+    <p class="note">To upgrade, quit Folderite from the tray and unzip the new release over the old folder. Your settings are kept. Needs Windows 10 1903 or later; Windows 11 recommended.</p>
+  </section>
+
+  <section class="section" id="faq">
+    <header class="section-head">
+      <p class="eyebrow">FAQ</p>
+      <h2>Common questions</h2>
+    </header>
+    <div class="faq-list">
+      <details class="faq-q" id="q-other-apps">
+        <summary>Does middle-click still work in my other apps?</summary>
+        <div class="faq-a">
+          <p>Yes. Folderite only takes over the middle click when it lands on a window it supports. In your browser, editor or anywhere else, middle-click works as it always has. In Windows 11 Explorer, middle-clicking a tab still closes it.</p>
+        </div>
+      </details>
+      <details class="faq-q" id="q-turn-off">
+        <summary>Can I turn it off for a while, or for one app?</summary>
+        <div class="faq-a">
+          <p>Choose <em>Pause</em> in the tray menu to turn it off until you resume. To leave one app alone for good, add it under Settings&nbsp;›&nbsp;Exclusions (<code>disabledProcesses</code> in the config).</p>
+        </div>
+      </details>
+      <details class="faq-q" id="q-settings">
+        <summary>Where are my settings stored?</summary>
+        <div class="faq-a">
+          <p>In <code>%APPDATA%\Folderite\config.json</code>, next to <code>history.json</code>. Settings&nbsp;›&nbsp;General&nbsp;›&nbsp;<em>Change location…</em> moves both to another folder.</p>
+          <p>Pick Folderite's own folder and it becomes portable: a <code>config.json</code> next to the exe always wins, so your settings go wherever the folder goes.</p>
+        </div>
+      </details>
+      <details class="faq-q" id="q-network">
+        <summary>Does Folderite connect to the internet?</summary>
+        <div class="faq-a">
+          <p>No. There's no telemetry and no update check. Your folder history stays in <code>history.json</code> on your PC.</p>
+        </div>
+      </details>
+      <details class="faq-q" id="q-smartscreen">
+        <summary>Windows says it “protected my PC”. Is that expected?</summary>
+        <div class="faq-a">
+          <p>It can be. The exe isn't code-signed, so SmartScreen may warn about it the first time it runs. Click <em>More info</em>, then <em>Run anyway</em>. The release zip is built from the public source by GitHub Actions, and you can always <a href="https://github.com/combwizard/folderite#build-from-source">build it yourself</a>.</p>
+        </div>
+      </details>
+      <details class="faq-q" id="q-dotnet">
+        <summary>Why do I need the .NET Desktop Runtime?</summary>
+        <div class="faq-a">
+          <p>Folderite is a .NET 10 app, and the release relies on the shared runtime instead of bundling its own copy. That keeps the download small, and other .NET apps on your PC use the same runtime.</p>
+        </div>
+      </details>
+      <details class="faq-q" id="q-blender">
+        <summary>How does it work in Blender?</summary>
+        <div class="faq-a">
+          <p>Blender gives other programs no way to set the folder of its File View, so Folderite types the path into the path field for you, pasting it through the clipboard. Your clipboard, text or image, is put back afterwards. Blender also doesn't say which folder it's showing, so the menu has no current-folder entry there.</p>
+        </div>
+      </details>
+      <details class="faq-q" id="q-uninstall">
+        <summary>How do I uninstall it?</summary>
+        <div class="faq-a">
+          <p>Turn off <em>Start with Windows</em> in the tray menu, choose <em>Exit</em>, and delete the Folderite folder. To remove your settings as well, delete <code>%APPDATA%\Folderite</code> (or the folder you moved them to). If you moved them, Folderite also remembered that location in the registry key <code>HKCU\Software\Folderite</code>, which you can delete too.</p>
+        </div>
+      </details>
+      <details class="faq-q" id="q-free">
+        <summary>Is it free?</summary>
+        <div class="faq-a">
+          <p>Yes. Folderite is open source under the <a href="https://github.com/combwizard/folderite/blob/main/LICENSE">MIT license</a>. Bug reports and ideas are welcome on <a href="https://github.com/combwizard/folderite/issues">GitHub Issues</a>.</p>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section class="cta" aria-labelledby="cta-title">
+    <img src="favicon.png" alt="" width="88" height="88">
+    <h2 id="cta-title">Give Folderite a try</h2>
+    <p>Free and open source, for Windows 10 and 11.</p>
+    <div class="btn-row">
+      <a class="btn primary big" href="https://github.com/combwizard/folderite/releases/latest">Download <span class="ver" data-version hidden></span></a>
+      <a class="btn big gh" href="https://github.com/combwizard/folderite"><svg class="gh-mark" width="20" height="20" aria-hidden="true"><use href="#gh"/></svg>View on GitHub</a>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <span class="foot-brand"><img src="favicon.png" alt="" width="24" height="24">Folderite</span>
+  <p>A middle-click folder menu for Windows. MIT license. Made by combwizard.</p>
+  <nav class="foot-links" aria-label="Project links">
+    <a href="https://github.com/combwizard/folderite">GitHub</a>
+    <a href="https://github.com/combwizard/folderite/releases">Releases</a>
+    <a href="https://github.com/combwizard/folderite/issues">Issues</a>
+    <a href="https://github.com/combwizard/folderite/blob/main/LICENSE">License</a>
+  </nav>
+</footer>
+</body>
+</html>

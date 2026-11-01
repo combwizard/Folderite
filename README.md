@@ -3,10 +3,14 @@
 [![CI](https://github.com/combwizard/folderite/actions/workflows/ci.yml/badge.svg)](https://github.com/combwizard/folderite/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/combwizard/folderite)](https://github.com/combwizard/folderite/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Website](https://img.shields.io/badge/website-combwizard.github.io%2Ffolderite-f2b632)](https://combwizard.github.io/folderite/)
 
 Middle-click in a file manager or Open/Save dialog to pop up a folder menu: favorites, folders open in other windows, recent folders (frecency-ranked), and the folder on the clipboard. Picking one sends *that* window there.
 
-![The Folderite menu over an Explorer window: the current folder, favorites, open windows, recent folders and the clipboard folder](docs/menu.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/menu-dark.png">
+  <img src="docs/menu-light.png" alt="The Folderite menu over an Explorer window: the current folder, favorites, open windows, recent folders and the clipboard folder">
+</picture>
 
 Supported: Windows Explorer (incl. Win11 tabs), common file dialogs, Directory Opus, Total Commander, XYplorer, Blender's file browser window, and the desktop (opens a new Explorer window).
 
@@ -35,17 +39,26 @@ Runs in the tray. Right-click the tray icon for Settings, Pause, Start with Wind
 
 Middle-click inside Explorer and pick a favorite or a recent folder:
 
-![Middle-clicking in Explorer, picking Work > Specs, then a recent folder](docs/explorer.gif)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/explorer-dark.gif">
+  <img src="docs/explorer-light.gif" alt="Middle-clicking in Explorer, picking Work > Specs, then a recent folder">
+</picture>
 
 In an Open or Save dialog, the file name you typed is kept:
 
-![Middle-clicking in a Save As dialog and picking Work > Reports; the typed file name stays](docs/save-dialog.gif)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/save-dialog-dark.gif">
+  <img src="docs/save-dialog-light.gif" alt="Middle-clicking in a Save As dialog and picking Work > Reports; the typed file name stays">
+</picture>
 
 ## Settings
 
 **Settings…** (tray menu, or the bottom of the folder menu) opens an editor for everything below: favorites (drag to reorder or nest, drop folders from Explorer), actions, menu sections, exclusions, your folder history, and Start with Windows / Pause. Changes save as you make them and the running app picks them up immediately. **Preview menu** shows the real menu with the current settings.
 
-![The Settings window on the Favorites page](docs/settings.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/settings-dark.png">
+  <img src="docs/settings-light.png" alt="The Settings window on the Favorites page">
+</picture>
 
 Settings rewrites `config.json` when it saves, so `//` comments in it are not kept. If the file has an error, Settings stops saving until it is fixed.
 
@@ -105,6 +118,10 @@ Settings rewrites `config.json` when it saves, so `//` comments in it are not ke
 - [ ] Middle-click elsewhere (browser tab, editor) still works normally
 - [ ] Elevated Explorer/dialog: fails gracefully unless Folderite runs elevated
 
+## Screenshots
+
+Every screenshot and animation in `docs/` exists in a light and a dark version (`<name>-light.*`, `<name>-dark.*`); the README and the website pick one by the viewer's theme. To retake them, switch Windows to light mode and run `pwsh tools\screenshots\capture.ps1`, then switch to dark mode and run it again. It drives a demo setup with made-up folders on a temporary `X:` drive and takes over the mouse for about a minute.
+
 ## Releasing
 
 Push a version tag; the [Release workflow](.github/workflows/release.yml) tests, publishes, and attaches `Folderite-<version>-win-x64.zip` to a draft release with that tag. Edit the notes and publish it.
@@ -115,6 +132,10 @@ git push origin v0.3.0
 ```
 
 The version comes from the tag, not `Folderite.csproj`. A tag with a suffix (`v0.3.0-beta.1`) makes a pre-release. If a release for the tag already exists, the zip is added to it instead.
+
+## Inspiration
+
+Folderite is mainly inspired by [Direct Folders](https://www.codesector.com/directfolders), which first offered a middle-click folder menu for Explorer and file dialogs. Later on, [Listary](https://www.listary.com/) also shaped it, especially in how it jumps between open folders and recent folders.
 
 ## License
 

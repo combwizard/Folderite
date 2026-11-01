@@ -1,0 +1,103 @@
+# README/website captures. Run through capture.ps1, which sets %OUT%, %APP% and %BACKDROP%.
+# Coordinates are screen pixels on the primary monitor; the backdrop hides everything else.
+# Commands: see driver/Program.cs.
+
+clipsave
+clip X:\Projects\notes-cli\docs
+backdrop 100 80 1500 1000 %BACKDROP%
+run explorer.exe X:\Work\Reports
+waitwin rep CabinetWClass Reports
+place rep 1700 150 900 600
+run explorer.exe X:\Projects\aurora-web
+waitwin ex CabinetWClass aurora-web
+place ex 200 140 980 620
+fg ex
+wait 1200
+
+# ---- menu screenshot: menu with Recent open
+movein ex 380 150 300
+mclick
+wait 700
+item Recent 400
+wait 900
+item "Iceland trip" 300
+wait 600
+snap "%OUT%\menu.png" 150 100 1100 800
+key esc
+key esc
+wait 600
+
+# ---- Explorer animation ("mark" picks the reduced-motion still: Work submenu open)
+move 760 640 300
+rec "%OUT%\explorer.mkv" 150 100 1100 800 25
+wait 600
+movein ex 380 150 800
+wait 300
+mclick
+wait 800
+item Work 500
+wait 700
+mark "%OUT%\explorer-still.t"
+item Specs 300
+wait 400
+lclick
+wait 1500
+movein ex 430 140 600
+wait 300
+mclick
+wait 800
+item Recent 500
+wait 800
+item "Iceland trip" 450
+wait 400
+lclick
+wait 2000
+stop
+close ex
+wait 800
+
+# ---- Save dialog animation (+ still)
+# capture.ps1 hides the navigation pane in Explorer and in file dialogs, so no personal folders show.
+savedialog X:\Documents ""
+waitwin dlg #32770 "Save As"
+place dlg 200 140 1000 620
+fg dlg
+wait 1000
+move 760 640 200
+rec "%OUT%\save-dialog.mkv" 150 100 1100 800 25
+wait 600
+movein dlg 400 477 700
+wait 200
+lclick
+wait 300
+type "Meeting notes" 80
+wait 600
+movein dlg 420 190 700
+wait 300
+mclick
+wait 800
+item Work 500
+wait 700
+mark "%OUT%\save-dialog-still.t"
+item Reports 300
+wait 400
+lclick
+wait 2400
+stop
+close dlg
+wait 500
+
+# ---- Settings screenshot
+run "%APP%\Folderite.exe" --settings
+waitwin set HwndWrapper "Folderite Settings" 15000
+place set 200 140 960 640
+fg set
+wait 600
+movein set 346 407 400
+lclick
+wait 300
+move 1450 950 300
+wait 600
+snap "%OUT%\settings.png" 170 110 1020 700 nomouse
+close set
+close rep

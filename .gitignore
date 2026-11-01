@@ -7,3 +7,7 @@ TestResults/
 
 # Local
 *.log
+site/.preview/
+
+# Screenshot harness output
+tools/screenshots/.work/
