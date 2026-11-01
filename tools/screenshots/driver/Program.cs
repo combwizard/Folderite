@@ -110,6 +110,13 @@ static unsafe class Program
             case "clip": Clipboard.SetText(t[1]); break;
             case "clipsave": ClipSave(); break;
             case "savedialog": SaveDialog(t[1], t[2]); break;
+            case "opendialog": OpenDialog(t[1]); break;
+            // Read-back for checks: window title, a file dialog's folder (breadcrumb) and file name box, the foreground window.
+            case "title": Console.WriteLine($"  {t[1]} title: '{Text(Wins[t[1]])}'"); break;
+            case "crumb": Console.WriteLine($"  {t[1]} folder: '{Crumb(Wins[t[1]])}'"); break;
+            case "fname": Console.WriteLine($"  {t[1]} file name: '{FileNameText(Wins[t[1]])}'"); break;
+            case "tree": EnumChildWindows(Wins[t[1]], (h, _) => { Console.WriteLine($"  {h:X} parent {GetParent(h):X} id {GetDlgCtrlID(h):X} {ClassOf(h)} '{Text(h)}'"); return true; }, 0); break;
+            case "fgwin": { var h = GetForegroundWindow(); var c = new StringBuilder(256); GetClassName(h, c, 256); Console.WriteLine($"  foreground: {c} '{Text(h)}'"); break; }
             case "backdrop": Backdrop(I(t[1]), I(t[2]), I(t[3]), I(t[4]), t[5]); break;
             case "rec": StartRec(P(t[1]), I(t[2]), I(t[3]), I(t[4]), I(t[5]), t.Count > 6 ? I(t[6]) : 20); break;
             case "stop": StopRec(); break;
@@ -198,7 +205,7 @@ static unsafe class Program
     {
         ["ctrl"] = 0x11, ["shift"] = 0x10, ["alt"] = 0x12, ["enter"] = 0x0D, ["esc"] = 0x1B, ["tab"] = 0x09,
         ["back"] = 0x08, ["delete"] = 0x2E, ["up"] = 0x26, ["down"] = 0x28, ["left"] = 0x25, ["right"] = 0x27,
-        ["home"] = 0x24, ["end"] = 0x23, ["f5"] = 0x74,
+        ["home"] = 0x24, ["end"] = 0x23, ["f5"] = 0x74, ["win"] = 0x5B, ["space"] = 0x20,
     };
 
     static void Key(string combo)
@@ -282,6 +289,60 @@ static unsafe class Program
 
     // ---- dialogs
 
+    static void OpenDialog(string dir)
+    {
+        var th = new Thread(() =>
+        {
+            using var d = new OpenFileDialog { InitialDirectory = dir, Title = "Open", Filter = "All files (*.*)|*.*" };
+            d.ShowDialog();
+        });
+        th.SetApartmentState(ApartmentState.STA);
+        th.IsBackground = true;
+        th.Start();
+    }
+
+    static string Text(nint h) { var s = new StringBuilder(1024); GetWindowText(h, s, 1024); return s.ToString(); }
+
+    static string ClassOf(nint h) { var c = new StringBuilder(256); GetClassName(h, c, 256); return c.ToString(); }
+
+    // Same reading as Folderite's FileDialogAdapter: the breadcrumb toolbar's caption is "Address: <path>".
+    static string Crumb(nint dlg)
+    {
+        string result = "";
+        EnumChildWindows(dlg, (h, _) =>
+        {
+            if (ClassOf(h) == "ToolbarWindow32" && ClassOf(GetParent(h)) == "Breadcrumb Parent") { result = Text(h); return false; }
+            return true;
+        }, 0);
+        return result;
+    }
+
+    static string FileNameText(nint dlg)
+    {
+        // Vista-style dialogs nest the file name box deep inside the view, so search all descendants by control id.
+        nint combo = 0, edit = 0;
+        EnumChildWindows(dlg, (h, _) =>
+        {
+            int id = GetDlgCtrlID(h);
+            if (ClassOf(h) == "ComboBox" && (id == 0x47C || ClassOf(GetParent(h)) == "FloatNotifySink") && FindWindowEx(h, 0, "Edit", null) != 0) { combo = h; return false; }
+            if (id == 0x480 && ClassOf(h) == "Edit") edit = h;
+            return true;
+        }, 0);
+        if (combo != 0) edit = FindWindowEx(combo, 0, "Edit", null);
+        if (edit == 0) return "(no file name box)";
+        return GetText(edit);
+    }
+
+    static string GetText(nint h)
+    {
+        var buf = new char[1024];
+        fixed (char* p = buf)
+        {
+            int n = (int)SendMessageW(h, 0x000D /*WM_GETTEXT*/, buf.Length, (nint)p);
+            return new string(buf, 0, Math.Max(0, n));
+        }
+    }
+
     static void SaveDialog(string dir, string fileName)
     {
         var th = new Thread(() =>
@@ -359,6 +420,13 @@ static unsafe class Program
     delegate bool EnumProc(nint h, nint l);
 
     [DllImport("user32")] static extern bool EnumWindows(EnumProc cb, nint l);
+    [DllImport("user32")] static extern bool EnumChildWindows(nint parent, EnumProc cb, nint l);
+    [DllImport("user32")] static extern nint GetParent(nint h);
+    [DllImport("user32")] static extern nint GetDlgItem(nint h, int id);
+    [DllImport("user32")] static extern int GetDlgCtrlID(nint h);
+    [DllImport("user32", ExactSpelling = true)] static extern nint SendMessageW(nint h, uint m, nint w, nint l);
+    [DllImport("user32", CharSet = CharSet.Unicode)] static extern nint FindWindowEx(nint parent, nint after, string? cls, string? title);
+    [DllImport("user32")] static extern nint GetForegroundWindow();
     [DllImport("user32", CharSet = CharSet.Unicode)] static extern int GetClassName(nint h, StringBuilder s, int n);
     [DllImport("user32", CharSet = CharSet.Unicode)] static extern int GetWindowText(nint h, StringBuilder s, int n);
     [DllImport("user32")] static extern bool IsWindowVisible(nint h);
