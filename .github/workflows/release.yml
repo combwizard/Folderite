@@ -1,0 +1,57 @@
+name: Release
+
+# Push a tag like v0.3.0 to build Folderite-0.3.0-win-x64.zip and attach it to a
+# draft release for that tag. If a release for the tag already exists (for example
+# one you wrote notes for first), the zip is uploaded to it instead.
+# A tag with a suffix (v0.3.0-beta.1) makes a pre-release.
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      TAG: ${{ github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Version from tag
+        run: |
+          $version = $env:TAG -replace '^v', ''
+          if ($version -notmatch '^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$') { throw "Tag '$env:TAG' is not vX.Y.Z[-suffix]" }
+          "VERSION=$version" >> $env:GITHUB_ENV
+          "ZIP=Folderite-$version-win-x64.zip" >> $env:GITHUB_ENV
+
+      - name: Test
+        run: dotnet test -c Release
+
+      - name: Publish
+        run: dotnet publish src/Folderite/Folderite.csproj -c Release -p:Version=$env:VERSION -o publish
+
+      - name: Zip
+        run: Compress-Archive -Path publish/* -DestinationPath $env:ZIP
+
+      - name: Create or update release
+        run: |
+          gh release view $env:TAG *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $env:TAG $env:ZIP --clobber
+          } else {
+            $flags = @('--draft', '--generate-notes', '--title', "Folderite $env:VERSION")
+            if ($env:VERSION.Contains('-')) { $flags += '--prerelease' }
+            gh release create $env:TAG $env:ZIP @flags
+          }
+          exit $LASTEXITCODE
