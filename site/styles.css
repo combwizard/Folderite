@@ -546,6 +546,44 @@ kbd { border-bottom-width: 2px; }
 .foot-links a { color: var(--sub); text-decoration: none; font-weight: 600; }
 .foot-links a:hover { color: var(--blue); }
 
+/* ------------------------------------------------------------ lightbox */
+a.zoom { display: block; cursor: zoom-in; color: inherit; }
+html:has(.lightbox[open]) { overflow: hidden; }
+a.zoom:focus-visible { outline-offset: -3px; }
+.lightbox {
+  width: fit-content; max-width: min(1320px, 94vw); max-height: 94vh;
+  margin: auto; padding: 0; border: 0; background: none; overflow: visible;
+  color: var(--text);
+}
+.lightbox::backdrop {
+  background: rgba(10, 12, 16, .72);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+}
+.lightbox img {
+  max-width: 100%; max-height: calc(94vh - 56px); width: auto; margin: 0 auto;
+  border-radius: var(--radius);
+  background: var(--stage);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, .5);
+}
+.lightbox-cap { margin-top: 14px; text-align: center; color: #e6e7ea; font-size: 15px; }
+.lightbox-close {
+  position: absolute; top: -14px; right: -14px; z-index: 1;
+  width: 38px; height: 38px; border-radius: 50%;
+  display: grid; place-items: center;
+  font: 400 24px/1 var(--font); color: var(--text); cursor: pointer;
+  background: var(--bg1); border: 1px solid var(--line2);
+  box-shadow: var(--shadow-sm);
+}
+.lightbox-close:hover { border-color: var(--blue); color: var(--blue); }
+.lightbox[open] { animation: lb-in .25s var(--ease); }
+.lightbox[open]::backdrop { animation: lb-fade .25s ease; }
+@keyframes lb-in { from { opacity: 0; transform: scale(.96); } }
+@keyframes lb-fade { from { opacity: 0; } }
+@media (max-width: 520px) {
+  .lightbox-close { top: auto; bottom: -52px; right: 50%; translate: 50% 0; }
+  .lightbox-cap { margin-bottom: 52px; }
+}
+
 /* ------------------------------------------------------------ reveal (site.js adds .reveal) */
 .reveal {
   opacity: 0; transform: translateY(26px); filter: blur(5px);

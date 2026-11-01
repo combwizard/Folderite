@@ -163,6 +163,40 @@
     });
   }
 
+  // ---- Lightbox: a.zoom links open their image large. Uses the image the browser picked (light/dark,
+  // still/animated), so the enlarged view matches the page. Without JS the link opens the image itself.
+
+  function lightbox() {
+    const dlg = $('#lightbox');
+    if (!dlg || typeof dlg.showModal !== 'function') return;
+    const img = $('img', dlg);
+    const cap = $('.lightbox-cap', dlg);
+    let opener = null;
+
+    $$('a.zoom').forEach((a) => {
+      a.addEventListener('click', (e) => {
+        if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey) return;   // let new-tab clicks through
+        const src = $('img', a);
+        if (!src) return;
+        e.preventDefault();
+        opener = a;
+        img.src = src.currentSrc || src.src;
+        img.alt = src.alt;
+        cap.textContent = src.alt;
+        dlg.showModal();
+      });
+    });
+
+    // A click on the backdrop (outside the image and caption) closes it.
+    dlg.addEventListener('click', (e) => {
+      if (e.target === dlg) dlg.close();
+    });
+    dlg.addEventListener('close', () => {
+      img.removeAttribute('src');
+      if (opener) opener.focus({ preventScroll: true });
+    });
+  }
+
   function boot() {
     scrollEffects();
     heroSpotlight();
@@ -170,6 +204,7 @@
     reveal();
     latestRelease();
     faq();
+    lightbox();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

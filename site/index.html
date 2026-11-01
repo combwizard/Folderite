@@ -67,16 +67,20 @@
       </div>
       <div class="hero-art">
         <figure class="shot shot-back" data-depth="0.12">
-          <picture>
-            <source srcset="images/settings-dark.png" media="(prefers-color-scheme: dark)">
-            <img src="images/settings-light.png" alt="The Folderite Settings window on the Favorites page" width="1020" height="700">
-          </picture>
+          <a class="zoom" href="images/settings-light.png" aria-label="Enlarge: The Folderite Settings window on the Favorites page">
+            <picture>
+              <source srcset="images/settings-dark.png" media="(prefers-color-scheme: dark)">
+              <img src="images/settings-light.png" alt="The Folderite Settings window on the Favorites page" width="1020" height="700">
+            </picture>
+          </a>
         </figure>
         <figure class="shot shot-front" data-depth="-0.04">
-          <picture>
-            <source srcset="images/menu-dark.png" media="(prefers-color-scheme: dark)">
-            <img src="images/menu-light.png" alt="The Folderite menu over an Explorer window: the current folder, favorites, open windows, recent folders and the clipboard folder" width="1100" height="800">
-          </picture>
+          <a class="zoom" href="images/menu-light.png" aria-label="Enlarge: The Folderite menu over an Explorer window: the current folder, favorites, open windows, recent folders and the clipboard folder">
+            <picture>
+              <source srcset="images/menu-dark.png" media="(prefers-color-scheme: dark)">
+              <img src="images/menu-light.png" alt="The Folderite menu over an Explorer window: the current folder, favorites, open windows, recent folders and the clipboard folder" width="1100" height="800">
+            </picture>
+          </a>
         </figure>
         <span class="chip chip-1" data-depth="-0.16" aria-hidden="true"><i>★</i>Favorites</span>
         <span class="chip chip-2" data-depth="-0.24" aria-hidden="true"><i>⧉</i>Open windows</span>
@@ -116,12 +120,14 @@
         <span class="glow" aria-hidden="true"></span>
         <div class="tilt" data-depth="-0.05">
           <div class="frame">
-            <picture>
-              <source srcset="images/explorer-still-dark.png" media="(prefers-reduced-motion: reduce) and (prefers-color-scheme: dark)">
-              <source srcset="images/explorer-still-light.png" media="(prefers-reduced-motion: reduce)">
-              <source srcset="images/explorer-dark.gif" media="(prefers-color-scheme: dark)">
-              <img src="images/explorer-light.gif" alt="Middle-clicking in Explorer, picking Work > Specs, then a recent folder" width="1100" height="800" loading="lazy">
-            </picture>
+            <a class="zoom" href="images/explorer-light.gif" aria-label="Enlarge: Middle-clicking in Explorer, picking Work > Specs, then a recent folder">
+              <picture>
+                <source srcset="images/explorer-still-dark.png" media="(prefers-reduced-motion: reduce) and (prefers-color-scheme: dark)">
+                <source srcset="images/explorer-still-light.png" media="(prefers-reduced-motion: reduce)">
+                <source srcset="images/explorer-dark.gif" media="(prefers-color-scheme: dark)">
+                <img src="images/explorer-light.gif" alt="Middle-clicking in Explorer, picking Work > Specs, then a recent folder" width="1100" height="800" loading="lazy">
+              </picture>
+            </a>
           </div>
         </div>
       </figure>
@@ -138,12 +144,14 @@
         <span class="glow" aria-hidden="true"></span>
         <div class="tilt" data-depth="-0.05">
           <div class="frame">
-            <picture>
-              <source srcset="images/save-dialog-still-dark.png" media="(prefers-reduced-motion: reduce) and (prefers-color-scheme: dark)">
-              <source srcset="images/save-dialog-still-light.png" media="(prefers-reduced-motion: reduce)">
-              <source srcset="images/save-dialog-dark.gif" media="(prefers-color-scheme: dark)">
-              <img src="images/save-dialog-light.gif" alt="Middle-clicking in a Save As dialog and picking Work > Reports; the typed file name stays" width="1100" height="800" loading="lazy">
-            </picture>
+            <a class="zoom" href="images/save-dialog-light.gif" aria-label="Enlarge: Middle-clicking in a Save As dialog and picking Work > Reports; the typed file name stays">
+              <picture>
+                <source srcset="images/save-dialog-still-dark.png" media="(prefers-reduced-motion: reduce) and (prefers-color-scheme: dark)">
+                <source srcset="images/save-dialog-still-light.png" media="(prefers-reduced-motion: reduce)">
+                <source srcset="images/save-dialog-dark.gif" media="(prefers-color-scheme: dark)">
+                <img src="images/save-dialog-light.gif" alt="Middle-clicking in a Save As dialog and picking Work > Reports; the typed file name stays" width="1100" height="800" loading="lazy">
+              </picture>
+            </a>
           </div>
         </div>
       </figure>
@@ -188,10 +196,12 @@
         <span class="glow" aria-hidden="true"></span>
         <div class="tilt" data-depth="-0.05">
           <div class="frame">
-            <picture>
-              <source srcset="images/settings-dark.png" media="(prefers-color-scheme: dark)">
-              <img src="images/settings-light.png" alt="The Settings window on the Favorites page" width="1020" height="700" loading="lazy">
-            </picture>
+            <a class="zoom" href="images/settings-light.png" aria-label="Enlarge: The Settings window on the Favorites page">
+              <picture>
+                <source srcset="images/settings-dark.png" media="(prefers-color-scheme: dark)">
+                <img src="images/settings-light.png" alt="The Settings window on the Favorites page" width="1020" height="700" loading="lazy">
+              </picture>
+            </a>
           </div>
         </div>
       </figure>
@@ -347,5 +357,10 @@
     <a href="https://github.com/combwizard/folderite/blob/main/LICENSE">License</a>
   </nav>
 </footer>
+<dialog class="lightbox" id="lightbox" aria-label="Enlarged screenshot">
+  <form method="dialog"><button class="lightbox-close" aria-label="Close">×</button></form>
+  <img alt="">
+  <p class="lightbox-cap"></p>
+</dialog>
 </body>
 </html>
