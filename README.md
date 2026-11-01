@@ -6,6 +6,8 @@
 
 Middle-click in a file manager or Open/Save dialog to pop up a folder menu: favorites, folders open in other windows, recent folders (frecency-ranked), and the folder on the clipboard. Picking one sends *that* window there.
 
+![The Folderite menu over an Explorer window: the current folder, favorites, open windows, recent folders and the clipboard folder](docs/menu.png)
+
 Supported: Windows Explorer (incl. Win11 tabs), common file dialogs, Directory Opus, Total Commander, XYplorer, Blender's file browser window, and the desktop (opens a new Explorer window).
 
 ## Install
@@ -31,9 +33,19 @@ src\Folderite\bin\Debug\net10.0-windows\win-x64\Folderite.exe
 
 Runs in the tray. Right-click the tray icon for Settings, Pause, Start with Windows, Edit config, and Exit. Left-click opens the folder menu; picking a folder there opens a new Explorer window.
 
+Middle-click inside Explorer and pick a favorite or a recent folder:
+
+![Middle-clicking in Explorer, picking Work > Specs, then a recent folder](docs/explorer.gif)
+
+In an Open or Save dialog, the file name you typed is kept:
+
+![Middle-clicking in a Save As dialog and picking Work > Reports; the typed file name stays](docs/save-dialog.gif)
+
 ## Settings
 
 **Settings…** (tray menu, or the bottom of the folder menu) opens an editor for everything below: favorites (drag to reorder or nest, drop folders from Explorer), actions, menu sections, exclusions, your folder history, and Start with Windows / Pause. Changes save as you make them and the running app picks them up immediately. **Preview menu** shows the real menu with the current settings.
+
+![The Settings window on the Favorites page](docs/settings.png)
 
 Settings rewrites `config.json` when it saves, so `//` comments in it are not kept. If the file has an error, Settings stops saving until it is fixed.
 
