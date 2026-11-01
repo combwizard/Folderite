@@ -64,6 +64,24 @@ public sealed class MenuComposerTests
         public void AddFavorite(string path) => Added.Add(path);
         public void OpenSettings() => OpenSettingsCalls++;
         public void Reload() => ReloadCalls++;
+
+        /// <summary>Subfolder listings by folder path; calls are recorded in <see cref="Listed"/>.</summary>
+        public Dictionary<string, FolderListing> Subfolders { get; } = new(StringComparer.OrdinalIgnoreCase);
+        public List<(string Path, bool NewestFirst)> Listed { get; } = [];
+        public List<DriveEntry> Drives { get; } = [];
+        public int ListDrivesCalls { get; private set; }
+
+        public FolderListing ListSubfolders(string path, bool newestFirst)
+        {
+            Listed.Add((path, newestFirst));
+            return Subfolders.TryGetValue(path, out var listing) ? listing : FolderListing.Empty;
+        }
+
+        public IReadOnlyList<DriveEntry> ListDrives()
+        {
+            ListDrivesCalls++;
+            return Drives;
+        }
     }
 
     [Fact]
@@ -380,6 +398,237 @@ public sealed class MenuComposerTests
         var nodes = Build(config, Ctx(Current, clipboard: @"C:\Clip"));
 
         Assert.DoesNotContain(nodes.OfType<MenuItem>(), i => i.Text.Contains("lipboard"));
+    }
+
+    private static FavoriteEntry SubfolderFavorite(string path, string name = "&Proj", string? sort = null) =>
+        new() { Name = name, Path = path, ShowSubfolders = true, SortSubfolders = sort };
+
+    private static IReadOnlyList<MenuNode> OpenLazy(SubMenu sub) =>
+        sub.LazyChildren?.Invoke() ?? throw new Xunit.Sdk.XunitException("No LazyChildren.");
+
+    [Fact]
+    public void Build_DoesNotReadDisk_OnlyInvokingLazyChildrenDoes()
+    {
+        var cmd = new FakeCommands();
+        var config = Config(SubfolderFavorite(@"C:\Proj"));
+        config.ShowDrives = true;
+
+        var nodes = Build(config, Ctx(), cmd);
+
+        Assert.Empty(cmd.Listed);
+        Assert.Equal(0, cmd.ListDrivesCalls);
+
+        OpenLazy(nodes.OfType<SubMenu>().Single(s => s.Text == "&Proj"));
+        Assert.Single(cmd.Listed);
+        Assert.Equal(0, cmd.ListDrivesCalls);
+
+        OpenLazy(nodes.OfType<SubMenu>().Single(s => s.Text == "Dri&ves"));
+        Assert.Equal(1, cmd.ListDrivesCalls);
+    }
+
+    [Fact]
+    public void SubfolderFavorite_IsLazySubMenuWithFolderIconAndNoStaticChildren()
+    {
+        var nodes = Build(Config(SubfolderFavorite(@"C:\Proj")), Ctx());
+
+        var sub = Assert.IsType<SubMenu>(Assert.Single(nodes.Take(1)));
+        Assert.Equal("&Proj", sub.Text);
+        Assert.Equal(@"C:\Proj", sub.IconPath);
+        Assert.Empty(sub.Children);
+        Assert.NotNull(sub.LazyChildren);
+    }
+
+    [Fact]
+    public void SubfolderFavorite_WithoutName_UsesEscapedFolderName()
+    {
+        var nodes = Build(Config(SubfolderFavorite(@"C:\R&D", name: "")), Ctx());
+
+        Assert.Equal("R&&D", Assert.IsType<SubMenu>(nodes[0]).Text);
+    }
+
+    [Fact]
+    public void SubfolderFavorite_Children_DefaultItemThenSeparatorThenSubfoldersInOrder()
+    {
+        var cmd = new FakeCommands();
+        cmd.Subfolders[@"C:\Proj"] = new FolderListing([@"C:\Proj\Zed", @"C:\Proj\Alpha", @"C:\Proj\R&D"], false);
+
+        var nodes = Build(Config(SubfolderFavorite(@"C:\Proj")), Ctx(), cmd);
+        var children = OpenLazy((SubMenu)nodes[0]);
+
+        Assert.Equal(5, children.Count);
+        var self = Assert.IsType<MenuItem>(children[0]);
+        Assert.Equal("Proj", self.Text);
+        Assert.True(self.IsDefault);
+        Assert.Equal(@"C:\Proj", self.IconPath);
+        Assert.IsType<MenuSeparator>(children[1]);
+        var subs = children.Skip(2).Cast<MenuItem>().ToList();
+        Assert.Equal(new[] { "Zed", "Alpha", "R&&D" }, subs.Select(i => i.Text));
+        Assert.Equal(new[] { @"C:\Proj\Zed", @"C:\Proj\Alpha", @"C:\Proj\R&D" }, subs.Select(i => i.IconPath));
+        Assert.All(subs, i => Assert.Null(i.Detail));
+        Assert.All(subs, i => Assert.False(i.IsDefault));
+    }
+
+    [Fact]
+    public void SubfolderFavorite_Children_InvokingNavigates()
+    {
+        var cmd = new FakeCommands();
+        cmd.Subfolders[@"C:\Proj"] = new FolderListing([@"C:\Proj\Alpha"], false);
+
+        var nodes = Build(Config(SubfolderFavorite(@"C:\Proj")), Ctx(), cmd);
+        var children = OpenLazy((SubMenu)nodes[0]);
+        ((MenuItem)children[0]).OnInvoke();
+        ((MenuItem)children[2]).OnInvoke();
+
+        Assert.Equal(new[] { @"C:\Proj", @"C:\Proj\Alpha" }, cmd.Navigated);
+    }
+
+    [Theory]
+    [InlineData(null, false)]
+    [InlineData("name", false)]
+    [InlineData("newest", true)]
+    public void SubfolderFavorite_PassesSortOrderToLister(string? sort, bool expectedNewestFirst)
+    {
+        var cmd = new FakeCommands();
+
+        var nodes = Build(Config(SubfolderFavorite(@"C:\Proj", sort: sort)), Ctx(), cmd);
+        OpenLazy((SubMenu)nodes[0]);
+
+        Assert.Equal(new[] { (@"C:\Proj", expectedNewestFirst) }, cmd.Listed);
+    }
+
+    [Fact]
+    public void SubfolderFavorite_ExpandsEnvironmentVariables()
+    {
+        var cmd = new FakeCommands();
+        string expanded = Environment.ExpandEnvironmentVariables(@"%SystemRoot%\Proj");
+
+        var nodes = Build(Config(SubfolderFavorite(@"%SystemRoot%\Proj")), Ctx(), cmd);
+        var sub = (SubMenu)nodes[0];
+        OpenLazy(sub);
+
+        Assert.Equal(expanded, sub.IconPath);
+        Assert.Equal(new[] { (expanded, false) }, cmd.Listed);
+    }
+
+    [Fact]
+    public void SubfolderFavorite_Truncated_EndsWithDisabledNote()
+    {
+        var cmd = new FakeCommands();
+        cmd.Subfolders[@"C:\Proj"] = new FolderListing([@"C:\Proj\A"], true);
+
+        var nodes = Build(Config(SubfolderFavorite(@"C:\Proj")), Ctx(), cmd);
+        var children = OpenLazy((SubMenu)nodes[0]);
+
+        var note = Assert.IsType<MenuItem>(children[^1]);
+        Assert.Equal($"Showing the first {FolderLister.MaxSubfolders} folders", note.Text);
+        Assert.False(note.Enabled);
+        Assert.Equal("A", Assert.IsType<MenuItem>(children[^2]).Text);
+    }
+
+    [Fact]
+    public void SubfolderFavorite_NotTruncated_HasNoNote()
+    {
+        var cmd = new FakeCommands();
+        cmd.Subfolders[@"C:\Proj"] = new FolderListing([@"C:\Proj\A"], false);
+
+        var nodes = Build(Config(SubfolderFavorite(@"C:\Proj")), Ctx(), cmd);
+        var children = OpenLazy((SubMenu)nodes[0]);
+
+        Assert.All(children.OfType<MenuItem>(), i => Assert.True(i.Enabled));
+    }
+
+    [Fact]
+    public void SubfolderFavorite_EmptyListing_HasDefaultItemThenSeparatorOnly()
+    {
+        var nodes = Build(Config(SubfolderFavorite(@"C:\Proj")), Ctx());
+        var children = OpenLazy((SubMenu)nodes[0]);
+
+        Assert.Equal(2, children.Count);
+        Assert.True(Assert.IsType<MenuItem>(children[0]).IsDefault);
+        Assert.IsType<MenuSeparator>(children[1]);
+    }
+
+    [Fact]
+    public void PlainAndGroupFavorites_AreUnchangedWhenOtherFavoritesShowSubfolders()
+    {
+        var cmd = new FakeCommands();
+        var config = Config(
+            new FavoriteEntry { Name = "&Plain", Path = @"C:\Plain", SortSubfolders = "newest" },
+            new FavoriteEntry { Name = "Work", Items = [new FavoriteEntry { Name = "&Repo", Path = @"C:\Repo" }] },
+            SubfolderFavorite(@"C:\Proj"));
+
+        var nodes = Build(config, Ctx(), cmd);
+
+        var plain = Assert.IsType<MenuItem>(nodes[0]);
+        Assert.Equal(@"C:\Plain", plain.IconPath);
+        var group = Assert.IsType<SubMenu>(nodes[1]);
+        Assert.Null(group.LazyChildren);
+        Assert.IsType<MenuItem>(Assert.Single(group.Children));
+        Assert.NotNull(Assert.IsType<SubMenu>(nodes[2]).LazyChildren);
+        Assert.Empty(cmd.Listed);
+    }
+
+    [Fact]
+    public void SubfolderFavorite_CountsAsFavoriteForAddToFavorites()
+    {
+        var config = Config(SubfolderFavorite(Current));
+
+        var nodes = Build(config, Ctx(Current));
+
+        Assert.DoesNotContain(((SubMenu)nodes[0]).Children.OfType<MenuItem>(), i => i.Text == "&Add to favorites");
+    }
+
+    [Fact]
+    public void Drives_AbsentByDefault()
+    {
+        var cmd = new FakeCommands();
+
+        var nodes = Build(Config(), Ctx(recent: [@"C:\A"]), cmd);
+
+        Assert.DoesNotContain(nodes.OfType<SubMenu>(), s => s.Text == "Dri&ves");
+        Assert.Equal(0, cmd.ListDrivesCalls);
+    }
+
+    [Fact]
+    public void Drives_WhenOn_AppearAfterRecentAndBeforeClipboard()
+    {
+        var config = Config();
+        config.ShowDrives = true;
+        config.ShowClipboard = true;
+
+        var nodes = Build(config, Ctx(recent: [@"C:\A"], clipboard: @"C:\Clip"));
+
+        int recent = nodes.ToList().FindIndex(n => n is SubMenu { Text: "&Recent" });
+        int drives = nodes.ToList().FindIndex(n => n is SubMenu { Text: "Dri&ves" });
+        int clip = nodes.ToList().FindIndex(n => n is MenuItem { Text: "C&lipboard" });
+        Assert.True(recent >= 0 && drives > recent && clip > drives);
+        Assert.IsType<MenuSeparator>(nodes[drives - 1]);
+        Assert.IsType<MenuSeparator>(nodes[clip - 1]);
+    }
+
+    [Fact]
+    public void Drives_ItemsShowLabelAndSpaceDetail()
+    {
+        var cmd = new FakeCommands();
+        cmd.Drives.Add(new DriveEntry(@"C:\", "Local Disk (C:)", 12L * 1024 * 1024 * 1024, 476L * 1024 * 1024 * 1024));
+        cmd.Drives.Add(new DriveEntry(@"E:\", "Disc & Co (E:)", null, null));
+        cmd.Drives.Add(new DriveEntry(@"F:\", "Odd (F:)", 5, null));
+        var config = Config();
+        config.ShowDrives = true;
+
+        var nodes = Build(config, Ctx(), cmd);
+        var items = OpenLazy(nodes.OfType<SubMenu>().Single(s => s.Text == "Dri&ves")).Cast<MenuItem>().ToList();
+
+        Assert.Equal(3, items.Count);
+        Assert.Equal("Local Disk (C:)", items[0].Text);
+        Assert.Equal(@"C:\", items[0].IconPath);
+        Assert.Equal(FolderLister.FormatSpace(12L * 1024 * 1024 * 1024, 476L * 1024 * 1024 * 1024), items[0].Detail);
+        Assert.Equal("Disc && Co (E:)", items[1].Text);
+        Assert.Null(items[1].Detail);
+        Assert.Null(items[2].Detail);
+
+        items[0].OnInvoke();
+        Assert.Equal(new[] { @"C:\" }, cmd.Navigated);
     }
 
     [Fact]

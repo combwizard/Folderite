@@ -37,6 +37,8 @@ src\Folderite\bin\Debug\net10.0-windows\win-x64\Folderite.exe
 
 Runs in the tray. Right-click the tray icon for Settings, Pause, Start with Windows, Edit config, and Exit. Left-click opens the folder menu; picking a folder there opens a new Explorer window.
 
+You can also open the menu with a keyboard shortcut: set one under **Settings → General → Keyboard shortcut**. It opens the menu for the window in front; if that isn't a supported window, picking a folder opens a new Explorer window.
+
 Middle-click inside Explorer and pick a favorite or a recent folder:
 
 <picture>
@@ -53,7 +55,7 @@ In an Open or Save dialog, the file name you typed is kept:
 
 ## Settings
 
-**Settings…** (tray menu, or the bottom of the folder menu) opens an editor for everything below: favorites (drag to reorder or nest, drop folders from Explorer), actions, menu sections, exclusions, your folder history, and Start with Windows / Pause. Changes save as you make them and the running app picks them up immediately. **Preview menu** shows the real menu with the current settings.
+**Settings…** (tray menu, or the bottom of the folder menu) opens an editor for everything below: favorites (drag to reorder or nest, drop folders from Explorer), actions, menu sections, exclusions, start folders for Open/Save dialogs, your folder history, Start with Windows / Pause, and the keyboard shortcut. Changes save as you make them and the running app picks them up immediately. **Preview menu** shows the real menu with the current settings.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/settings-dark.png">
@@ -69,7 +71,7 @@ Settings rewrites `config.json` when it saves, so `//` comments in it are not ke
 ```jsonc
 {
   "favorites": [
-    { "name": "&Projects", "path": "D:\\Projects" },
+    { "name": "&Projects", "path": "D:\\Projects", "showSubfolders": true },   // its subfolders in a submenu ("sortSubfolders": "newest" for newest first)
     { "name": "-" },                                   // separator
     { "name": "Work", "items": [                       // submenu
       { "name": "Specs", "path": "%USERPROFILE%\\Work\\Specs" }
@@ -84,11 +86,19 @@ Settings rewrites `config.json` when it saves, so `//` comments in it are not ke
   "disabledProcesses": ["someapp"],   // exe names without .exe
   "showOpenWindows": true,
   "showClipboard": true,
-  "enableOnDesktop": true
+  "enableOnDesktop": true,
+  "showDrives": false,                // a Drives submenu with free space
+  "hotkey": "Win+Shift+F",            // keyboard shortcut for the menu; "" = none
+  "dialogLastFolder": false,          // open file dialogs in the folder last used in that app
+  "dialogFolders": [                  // fixed start folders for one app's file dialogs
+    { "app": "notepad", "path": "D:\\Notes" }
+  ]
 }
 ```
 
 `&` marks the accelerator key in names. History lives in `history.json`, and errors are logged to `folderite.log`, both in the same folder.
+
+Recent folders are ranked by how often and how recently you used them, with a boost for folders used in the app the menu is opened over.
 
 ## How it works
 
@@ -117,6 +127,11 @@ Settings rewrites `config.json` when it saves, so `//` comments in it are not ke
 - [ ] Blender 5.x File View (Open, Import with options panel, folder picker): navigates from a click on the bookmarks and on the file list; clipboard (text and image) comes back; typed filename is kept
 - [ ] Middle-click elsewhere (browser tab, editor) still works normally
 - [ ] Elevated Explorer/dialog: fails gracefully unless Folderite runs elevated
+- [ ] Keyboard shortcut: opens the menu for Explorer (active tab), a file dialog, Directory Opus (focused side) and the desktop; elsewhere picking a folder opens a new Explorer window; does nothing while paused; a shortcut that's taken shows a warning in Settings
+- [ ] Favorite with subfolders: submenu lists subfolders (by name / newest first); the folder itself is the bold top item; a disconnected network folder doesn't freeze the menu
+- [ ] Recent folders: folders used in the current app rank higher there
+- [ ] Dialog start folder: off by default; when on, a new Open/Save dialog moves to the app's last folder and keeps the typed file name; a per-app folder wins; folder pickers work
+- [ ] Drives submenu (when enabled): lists drives with free space; a disconnected network drive doesn't hang the menu
 
 ## Screenshots
 

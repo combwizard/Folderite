@@ -39,6 +39,39 @@
                 </Grid>
             </ContentControl>
 
+            <ContentControl Style="{StaticResource SettingRow}" s:Setting.Icon="&#xE765;" s:Setting.Title="Keyboard shortcut"
+                            s:Setting.Description="Opens the folder menu for the window in front. Leave empty to use only the middle mouse button.">
+                <StackPanel HorizontalAlignment="Right">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <!-- Looks like a text box but only records: keys are read in PreviewKeyDown. -->
+                        <Grid Width="180">
+                            <TextBox x:Name="HotkeyBox" IsReadOnly="True" IsReadOnlyCaretVisible="False" IsUndoEnabled="False"
+                                     Text="{Binding Hotkey, Mode=OneWay}" ContextMenu="{x:Null}"
+                                     AutomationProperties.Name="Keyboard shortcut"
+                                     PreviewKeyDown="HotkeyBox_PreviewKeyDown"
+                                     GotKeyboardFocus="HotkeyBox_FocusChanged" LostKeyboardFocus="HotkeyBox_FocusChanged" />
+                            <TextBlock Text="None" Margin="10,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False"
+                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasHotkey}" Value="False">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
+                        <Button Content="Clear" Margin="8,0,0,0" Command="{Binding ClearHotkeyCommand}"
+                                IsEnabled="{Binding HasHotkey}" />
+                    </StackPanel>
+                    <TextBlock x:Name="HotkeyCaption" Style="{StaticResource Caption}" MaxWidth="260" Margin="0,6,0,0"
+                               HorizontalAlignment="Right" TextAlignment="Right" Visibility="Collapsed" />
+                </StackPanel>
+            </ContentControl>
+
             <TextBlock Style="{StaticResource SectionTitle}" Text="Configuration" />
 
             <!-- Like a SettingRow, but the path needs a selectable box under the title. -->

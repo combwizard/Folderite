@@ -90,4 +90,6 @@ internal sealed class MenuPreview : IMenuCommands
     public void AddFavorite(string path) => Report($"would add {path} to favorites");
     public void OpenSettings() => Report("this is Settings");
     public void Reload() => Report("would reload config.json");
+    public FolderListing ListSubfolders(string path, bool newestFirst) => FolderLister.ListSubfolders(path, newestFirst);
+    public IReadOnlyList<DriveEntry> ListDrives() => FolderLister.ListDrives();
 }

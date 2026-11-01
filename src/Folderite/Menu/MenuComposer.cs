@@ -18,6 +18,12 @@ internal interface IMenuCommands
     void AddFavorite(string path);
     void OpenSettings();
     void Reload();
+
+    /// <summary>Subfolders for a favorite's submenu; called when that submenu opens.</summary>
+    FolderListing ListSubfolders(string path, bool newestFirst);
+
+    /// <summary>Drives for the Drives submenu; called when it opens.</summary>
+    IReadOnlyList<DriveEntry> ListDrives();
 }
 
 /// <summary>Builds the popup's menu model from config + context. Pure: no Win32, no disk access.</summary>
@@ -69,6 +75,12 @@ internal static class MenuComposer
             nodes.Add(new SubMenu("&Recent", recent.Select(p => (MenuNode)FolderItem(p, cmd, showParent: true)).ToList()));
         }
 
+        if (config.ShowDrives)
+        {
+            nodes.Add(MenuSeparator.Instance);
+            nodes.Add(new SubMenu("Dri&ves", [], LazyChildren: () => DriveItems(cmd)));
+        }
+
         if (config.ShowClipboard && ctx.ClipboardPath is { } clip && !PathEquals(clip, current))
         {
             nodes.Add(MenuSeparator.Instance);
@@ -99,10 +111,47 @@ internal static class MenuComposer
             {
                 string path = Environment.ExpandEnvironmentVariables(entry.Path);
                 string name = string.IsNullOrEmpty(entry.Name) ? Escape(DisplayName(path)) : entry.Name;
-                nodes.Add(new MenuItem(name, () => cmd.Navigate(path), path));
+                if (entry.ShowSubfolders)
+                {
+                    bool newestFirst = entry.SubfoldersNewestFirst;
+                    nodes.Add(new SubMenu(name, [], path, () => SubfolderItems(path, newestFirst, cmd)));
+                }
+                else
+                {
+                    nodes.Add(new MenuItem(name, () => cmd.Navigate(path), path));
+                }
             }
         }
     }
+
+    /// <summary>
+    /// Children of a favorite's subfolder submenu. A submenu row can't be clicked, so the folder itself is the
+    /// bold first item. Runs when the submenu opens, which is the only time the disk is read.
+    /// </summary>
+    private static IReadOnlyList<MenuNode> SubfolderItems(string path, bool newestFirst, IMenuCommands cmd)
+    {
+        var listing = cmd.ListSubfolders(path, newestFirst);
+        var items = new List<MenuNode>
+        {
+            new MenuItem(Escape(DisplayName(path)), () => cmd.Navigate(path), path, IsDefault: true),
+            MenuSeparator.Instance,
+        };
+        foreach (var sub in listing.Paths)
+            items.Add(FolderItem(sub, cmd, showParent: false));
+        if (listing.Truncated)
+            items.Add(new MenuItem($"Showing the first {FolderLister.MaxSubfolders} folders", () => { }, Enabled: false));
+        return items;
+    }
+
+    /// <summary>Children of the Drives submenu, with free space as the dimmed detail. Runs when the submenu opens.</summary>
+    private static IReadOnlyList<MenuNode> DriveItems(IMenuCommands cmd) =>
+        cmd.ListDrives()
+            .Select(d => (MenuNode)new MenuItem(
+                Escape(d.Label),
+                () => cmd.Navigate(d.Root),
+                d.Root,
+                Detail: d.FreeBytes is { } free && d.TotalBytes is { } total ? FolderLister.FormatSpace(free, total) : null))
+            .ToList();
 
     /// <summary>Folder entry: the name as text, with the parent folder as the dimmed <see cref="MenuItem.Detail"/>.</summary>
     private static MenuItem FolderItem(string path, IMenuCommands cmd, bool showParent) =>

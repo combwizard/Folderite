@@ -48,6 +48,25 @@ internal sealed class FileDialogAdapter : ITargetAdapter
         return NavigateViaAddressBar(root, path);
     }
 
+    /// <summary>True when the file name box holds a path (the app picked the location itself).</summary>
+    public bool FileNameHasFolder(in TargetWindow window)
+    {
+        // In Vista-style dialogs the file name box sits deep inside the view, and its control id is 0: it's the editable
+        // ComboBox under a FloatNotifySink (the file type box there has no Edit). Older dialogs use the classic ids.
+        HWND root = (HWND)window.Root;
+        HWND edit = default;
+        Win32.FindDescendant(root, "ComboBox", h =>
+        {
+            if (PInvoke.GetDlgCtrlID(h) != IdFileNameCombo && Win32.GetClassName(PInvoke.GetParent(h)) != "FloatNotifySink")
+                return false;
+            edit = Win32.FindDescendant(h, "Edit");
+            return !edit.IsNull;
+        });
+        if (edit.IsNull)
+            edit = Win32.FindDescendant(root, "Edit", h => PInvoke.GetDlgCtrlID(h) == IdFileNameEdit);
+        return !edit.IsNull && Win32.GetControlText(edit) is var text && (text.Contains('\\') || text.Contains('/'));
+    }
+
     private static HWND FindFileNameEdit(HWND root)
     {
         HWND combo = PInvoke.GetDlgItem(root, IdFileNameCombo);

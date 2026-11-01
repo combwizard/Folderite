@@ -1,0 +1,55 @@
+<UserControl x:Class="Folderite.Settings.Pages.DialogsPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:s="clr-namespace:Folderite.Settings">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="0,0,12,0">
+            <TextBlock Style="{StaticResource SectionTitle}" Margin="2,0,0,8" Text="Open and Save dialogs" />
+
+            <ContentControl Style="{StaticResource SettingRow}" s:Setting.Icon="&#xE8E5;" s:Setting.Title="Start in the last folder used"
+                            s:Setting.Description="When an app shows an Open or Save dialog, start it in the folder you last used in that app.">
+                <CheckBox MinWidth="0" IsChecked="{Binding DialogLastFolder}" />
+            </ContentControl>
+
+            <TextBlock Style="{StaticResource SectionTitle}" Margin="2,16,0,8" Text="Folders for specific apps" />
+
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <ItemsControl x:Name="FolderList" ItemsSource="{Binding DialogFolders}" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="140" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Text="{Binding App, UpdateSourceTrigger=PropertyChanged}" ToolTip="Program name, for example notepad" />
+                                    <TextBox Grid.Column="2" Text="{Binding Path, UpdateSourceTrigger=PropertyChanged}" ToolTip="Folder the dialog starts in" />
+                                    <Button Grid.Column="3" Style="{StaticResource ToolButton}" Margin="6,0,0,0"
+                                            Content="&#xE838;" ToolTip="Browse" Click="Browse_Click" />
+                                    <Button Grid.Column="4" Style="{StaticResource ToolButton}" Margin="6,0,0,0"
+                                            Content="&#xE74D;" ToolTip="Remove this app"
+                                            Command="{Binding DataContext.RemoveDialogFolderCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Style="{StaticResource Caption}" Text="No apps yet."
+                               Visibility="{Binding DialogFolders.Count, Converter={StaticResource ZeroToVisible}}" />
+
+                    <Button Style="{StaticResource ToolButton}" Margin="0,6,0,0" HorizontalAlignment="Left"
+                            Content="&#xE710;" Tag="Add app" Command="{Binding AddDialogFolderCommand}"
+                            Click="AddFolder_Click" />
+
+                    <TextBlock Style="{StaticResource Caption}" Margin="0,10,0,0"
+                               Text="Use the program's file name without .exe, for example notepad or winword. A folder set here is used for that app's dialogs even when the option above is off." />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

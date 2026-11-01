@@ -60,6 +60,22 @@ public sealed partial class FavoriteNodeVm : ObservableObject
     [NotifyPropertyChangedFor(nameof(DisplayName), nameof(ExpandedPath), nameof(PathMissing))]
     private string? path;
 
+    /// <summary>Folder only: the menu shows its subfolders as a submenu.</summary>
+    [ObservableProperty]
+    private bool showSubfolders;
+
+    /// <summary>Folder only: list subfolders newest first instead of by name.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SubfoldersByName))]
+    private bool subfoldersNewestFirst;
+
+    /// <summary>The inverse of <see cref="SubfoldersNewestFirst"/>, so two radio buttons can bind without a converter.</summary>
+    public bool SubfoldersByName
+    {
+        get => !SubfoldersNewestFirst;
+        set => SubfoldersNewestFirst = !value;
+    }
+
     [ObservableProperty]
     private bool isExpanded = true;
 
@@ -129,7 +145,14 @@ public sealed partial class FavoriteNodeVm : ObservableObject
             {
                 FavoriteKind.Group => new FavoriteEntry { Name = node.Name, Items = ToConfig(node.Children) },
                 FavoriteKind.Separator => new FavoriteEntry { Name = SeparatorName },
-                _ => new FavoriteEntry { Name = node.Name, Path = node.Path },
+                _ => new FavoriteEntry
+                {
+                    Name = node.Name,
+                    Path = node.Path,
+                    ShowSubfolders = node.ShowSubfolders,
+                    // Null for the default order, so the file stays unchanged for anyone not using the feature.
+                    SortSubfolders = node.SubfoldersNewestFirst ? FavoriteEntry.SortNewest : null,
+                },
             });
         }
         return result;
@@ -150,7 +173,11 @@ public sealed partial class FavoriteNodeVm : ObservableObject
         }
         else
         {
-            node = new FavoriteNodeVm(FavoriteKind.Folder, entry.Name, entry.Path);
+            node = new FavoriteNodeVm(FavoriteKind.Folder, entry.Name, entry.Path)
+            {
+                ShowSubfolders = entry.ShowSubfolders,
+                SubfoldersNewestFirst = entry.SubfoldersNewestFirst,
+            };
         }
         node.Parent = parent;
         return node;
@@ -178,7 +205,7 @@ public sealed partial class FavoritesTreeVm : ObservableObject
     [ObservableProperty]
     private FavoriteNodeVm? selected;
 
-    /// <summary>Raised for structural changes and Name/Path edits anywhere in the tree (not for expand/select).</summary>
+    /// <summary>Raised for structural changes and Name/Path/subfolder edits anywhere in the tree (not for expand/select).</summary>
     public event Action? Changed;
 
     public void Load(IEnumerable<FavoriteEntry> entries)
@@ -417,6 +444,8 @@ public sealed partial class FavoritesTreeVm : ObservableObject
         {
             case nameof(FavoriteNodeVm.Name):
             case nameof(FavoriteNodeVm.Path):
+            case nameof(FavoriteNodeVm.ShowSubfolders):
+            case nameof(FavoriteNodeVm.SubfoldersNewestFirst):
                 RaiseChanged();
                 break;
             case nameof(FavoriteNodeVm.IsSelected) when sender is FavoriteNodeVm node:

@@ -139,6 +139,18 @@
                                        Foreground="{DynamicResource SystemFillColorCautionBrush}" />
                             <TextBlock Style="{StaticResource Caption}" Margin="6,0,0,0" Text="This folder doesn't exist." />
                         </StackPanel>
+
+                        <CheckBox Margin="0,12,0,0" Content="Show subfolders in a submenu"
+                                  IsChecked="{Binding ShowSubfolders}" />
+                        <StackPanel Margin="24,2,0,0"
+                                    Visibility="{Binding ShowSubfolders, Converter={StaticResource BoolToVisible}}">
+                            <RadioButton GroupName="SubfolderSort" Content="Sort by name"
+                                         IsChecked="{Binding SubfoldersByName}" />
+                            <RadioButton GroupName="SubfolderSort" Content="Newest first"
+                                         IsChecked="{Binding SubfoldersNewestFirst}" />
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource Caption}" Margin="0,6,0,0"
+                                   Text="The folder itself is at the top of the submenu." />
                     </StackPanel>
 
                     <TextBlock x:Name="SeparatorNote" Style="{StaticResource Caption}" Visibility="Collapsed"

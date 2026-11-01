@@ -357,6 +357,119 @@ public sealed class SettingsVmTests : IDisposable
         Assert.Single(vm.Actions);
         Assert.Same(vm.Actions[0], vm.SelectedAction);
     }
+
+    [Fact]
+    public void DialogSettings_LoadAndRoundTrip()
+    {
+        var config = SampleConfig();
+        config.DialogLastFolder = true;
+        config.DialogFolders = [new() { App = "notepad", Path = @"D:\Notes" }];
+        config.Hotkey = "Ctrl+Alt+F";
+        config.ShowDrives = true;
+
+        var vm = NewVm(config);
+
+        Assert.True(vm.DialogLastFolder);
+        Assert.Equal("Ctrl+Alt+F", vm.Hotkey);
+        Assert.True(vm.ShowDrives);
+        var row = Assert.Single(vm.DialogFolders);
+        Assert.Equal("notepad", row.App);
+        Assert.Equal(@"D:\Notes", row.Path);
+        Assert.False(vm.HasPendingSave);
+
+        var built = vm.BuildConfig();
+
+        Assert.True(built.DialogLastFolder);
+        Assert.Equal("Ctrl+Alt+F", built.Hotkey);
+        Assert.True(built.ShowDrives);
+        var saved = Assert.Single(built.DialogFolders);
+        Assert.Equal("notepad", saved.App);
+        Assert.Equal(@"D:\Notes", saved.Path);
+    }
+
+    [Fact]
+    public void DialogFolderVm_DropsExeAndTrims()
+    {
+        var saved = new DialogFolderVm { App = "  WinWord.EXE ", Path = @"  C:\Docs  " }.ToConfig();
+
+        Assert.Equal("WinWord", saved.App);
+        Assert.Equal(@"C:\Docs", saved.Path);
+    }
+
+    [Fact]
+    public void BuildConfig_DropsDialogFolderRowsMissingAppOrPath()
+    {
+        var vm = NewVm();
+        vm.DialogFolders.Add(new DialogFolderVm { App = "", Path = @"C:\a" });
+        vm.DialogFolders.Add(new DialogFolderVm { App = "notepad", Path = "  " });
+        vm.DialogFolders.Add(new DialogFolderVm { App = ".exe", Path = @"C:\b" });
+        vm.DialogFolders.Add(new DialogFolderVm { App = "code.exe", Path = @" C:\c " });
+
+        var built = vm.BuildConfig();
+
+        var kept = Assert.Single(built.DialogFolders);
+        Assert.Equal("code", kept.App);
+        Assert.Equal(@"C:\c", kept.Path);
+    }
+
+    [Fact]
+    public void DialogFolderEdits_ScheduleSave()
+    {
+        var config = SampleConfig();
+        config.DialogFolders = [new() { App = "notepad", Path = @"D:\Notes" }];
+        var vm = NewVm(config);
+        Assert.False(vm.HasPendingSave);
+
+        vm.DialogFolders[0].Path = @"E:\Other";
+        Assert.True(vm.HasPendingSave);
+        _time.Advance(TimeSpan.FromMilliseconds(400));
+        Assert.Equal(@"E:\Other", Assert.Single(ReadFromDisk().DialogFolders).Path);
+
+        vm.DialogFolders.Add(new DialogFolderVm { App = "code", Path = @"C:\src" });
+        Assert.True(vm.HasPendingSave);
+        _time.Advance(TimeSpan.FromMilliseconds(400));
+        Assert.Equal(["notepad", "code"], ReadFromDisk().DialogFolders.Select(d => d.App));
+
+        vm.DialogFolders[1].App = "devenv";
+        _time.Advance(TimeSpan.FromMilliseconds(400));
+        Assert.Equal("devenv", ReadFromDisk().DialogFolders[1].App);
+
+        vm.DialogFolders.RemoveAt(0);
+        Assert.True(vm.HasPendingSave);
+        _time.Advance(TimeSpan.FromMilliseconds(400));
+        Assert.Equal("devenv", Assert.Single(ReadFromDisk().DialogFolders).App);
+
+        vm.DialogLastFolder = true;
+        _time.Advance(TimeSpan.FromMilliseconds(400));
+        Assert.True(ReadFromDisk().DialogLastFolder);
+    }
+
+    [Fact]
+    public void DialogFolderCommands_AddAndRemove()
+    {
+        var config = SampleConfig();
+        config.DialogFolders = [new() { App = "notepad", Path = @"D:\Notes" }];
+        var vm = NewVm(config);
+
+        vm.AddDialogFolderCommand.Execute(null);
+
+        Assert.Equal(2, vm.DialogFolders.Count);
+        Assert.Equal("", vm.DialogFolders[1].App);
+        Assert.Equal("", vm.DialogFolders[1].Path);
+        Assert.True(vm.HasPendingSave);
+
+        var added = vm.DialogFolders[1];
+        vm.RemoveDialogFolderCommand.Execute(added);
+        vm.RemoveDialogFolderCommand.Execute(null);
+        vm.RemoveDialogFolderCommand.Execute(new DialogFolderVm());
+
+        Assert.Equal("notepad", Assert.Single(vm.DialogFolders).App);
+        _time.Advance(TimeSpan.FromMilliseconds(400));
+        Assert.False(vm.HasPendingSave);
+
+        added.App = "changed";
+        Assert.False(vm.HasPendingSave);
+    }
 }
 
 public sealed class HistoryVmTests

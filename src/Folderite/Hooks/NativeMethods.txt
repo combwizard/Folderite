@@ -1,0 +1,5 @@
+// Keyboard shortcut (App: RegisterHotKey on the message window; WM_HOTKEY finds the window in front)
+RegisterHotKey
+UnregisterHotKey
+GetGUIThreadInfo
+GUITHREADINFO

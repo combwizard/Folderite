@@ -28,6 +28,11 @@
                 <CheckBox MinWidth="0" IsChecked="{Binding ShowClipboard}" />
             </ContentControl>
 
+            <ContentControl Style="{StaticResource SettingRow}" s:Setting.Icon="&#xEDA2;" s:Setting.Title="Show drives"
+                            s:Setting.Description="Add a Drives submenu with the free space on each drive.">
+                <CheckBox MinWidth="0" IsChecked="{Binding ShowDrives}" />
+            </ContentControl>
+
             <ContentControl Style="{StaticResource SettingRow}" s:Setting.Icon="&#xE7F4;" s:Setting.Title="Work on the desktop"
                             s:Setting.Description="Also show the menu on the desktop. Choosing a folder there opens it in a new Explorer window.">
                 <CheckBox MinWidth="0" IsChecked="{Binding EnableOnDesktop}" />

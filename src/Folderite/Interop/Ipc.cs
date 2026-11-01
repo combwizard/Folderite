@@ -14,6 +14,13 @@ internal static unsafe class Ipc
     public const string RemoveHistory = "remove-history";
     public const string ClearHistory = "clear-history";
     public const string GetPaused = "get-paused";
+    /// <summary>
+    /// Answers <see cref="HotkeyOk"/> when the keyboard shortcut is registered (or none is set) and
+    /// <see cref="HotkeyFailed"/> when it couldn't be. 0 is what builds without this command answer, so it means "unknown".
+    /// </summary>
+    public const string GetHotkeyStatus = "get-hotkey-status";
+    public const nint HotkeyOk = 1;
+    public const nint HotkeyFailed = 2;
     public const string SetPaused = "set-paused";
     public const string Exit = "exit";
 

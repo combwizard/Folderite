@@ -32,3 +32,24 @@ public sealed partial class StringItemVm : ObservableObject
     [ObservableProperty]
     private string value;
 }
+
+/// <summary>Editable <see cref="DialogFolder"/>.</summary>
+public sealed partial class DialogFolderVm : ObservableObject
+{
+    /// <summary>Process name; a trailing ".exe" is dropped when saved.</summary>
+    [ObservableProperty]
+    private string app = "";
+
+    [ObservableProperty]
+    private string path = "";
+
+    public static DialogFolderVm From(DialogFolder folder) => new() { App = folder.App, Path = folder.Path };
+
+    public DialogFolder ToConfig()
+    {
+        var name = App.Trim();
+        if (name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+            name = name[..^4].TrimEnd();
+        return new() { App = name, Path = Path.Trim() };
+    }
+}

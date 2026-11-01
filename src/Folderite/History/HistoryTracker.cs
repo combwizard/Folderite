@@ -32,6 +32,12 @@ internal sealed class HistoryTracker : IDisposable
         _proc = OnWinEvent;
     }
 
+    /// <summary>
+    /// A window (any, supported or not) came to the foreground; raised right away, without the history debounce (on the thread
+    /// that called <see cref="Start"/>). DialogStarter uses it to move a new file dialog before history records it.
+    /// </summary>
+    public event Action<HWND>? Activated;
+
     public void Start()
     {
         const uint flags = PInvoke.WINEVENT_OUTOFCONTEXT | PInvoke.WINEVENT_SKIPOWNPROCESS;
@@ -44,6 +50,12 @@ internal sealed class HistoryTracker : IDisposable
         if (hwnd.IsNull || idObject != 0 /* OBJID_WINDOW */ || idChild != 0) return;
         HWND root = PInvoke.GetAncestor(hwnd, GET_ANCESTOR_FLAGS.GA_ROOT);
         if (root.IsNull) return;
+        if (evt == PInvoke.EVENT_SYSTEM_FOREGROUND)
+        {
+            try { Activated?.Invoke(root); }
+            catch (Exception ex) { Log.Error(ex); }
+        }
+
         var window = _registry.Describe(root, root);
         if (_registry.Find(window) is null) return;
 
@@ -61,7 +73,7 @@ internal sealed class HistoryTracker : IDisposable
             if (!PInvoke.IsWindow(root)) continue;
             var window = _registry.Describe(root, root);
             if (_registry.Find(window)?.GetCurrentPath(window) is { } path)
-                _store.Record(path);
+                _store.Record(path, window.ProcessName);
         }
         _pending.Clear();
     }

@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using Folderite.Config;
+using Folderite.Dialogs;
 using Folderite.History;
 using Folderite.Hooks;
 using Folderite.Interop;
@@ -11,6 +12,7 @@ using Folderite.Targets.ThirdParty;
 using Folderite.Tray;
 using Windows.Win32;
 using Windows.Win32.Foundation;
+using Windows.Win32.UI.Input.KeyboardAndMouse;
 using Windows.Win32.UI.WindowsAndMessaging;
 
 namespace Folderite;
@@ -21,6 +23,8 @@ internal sealed unsafe class App : IMenuCommands, IDisposable
     private const uint TrayMessage = PInvoke.WM_APP + 2;
     private const uint DispatchMessage = PInvoke.WM_APP + 3;
     private const nuint SaveTimerId = 0x4655;
+    private const int HotkeyId = 1;
+    private const uint ModNoRepeat = 0x4000;
     private const string WindowClass = Ipc.WindowClass;
 
     private readonly WNDPROC _wndProc;
@@ -35,6 +39,11 @@ internal sealed unsafe class App : IMenuCommands, IDisposable
     private TrayIcon? _tray;
     private HistoryTracker? _tracker;
     private MouseHook? _hook;
+    private DialogStarter? _dialogStarter;
+
+    // The shortcut text last applied ("" = none) and why it isn't registered, if it isn't.
+    private string _hotkeyText = "";
+    private string? _hotkeyError;
 
     // The window the open menu was invoked from; null adapter = tray (navigation opens a new Explorer window).
     private TargetWindow _target;
@@ -56,10 +65,11 @@ internal sealed unsafe class App : IMenuCommands, IDisposable
         _history = new FrecencyStore(_config.HistoryPath);
         _history.Load();
 
+        var fileDialogs = new FileDialogAdapter();
         _registry = new TargetRegistry(
         [
             new ExplorerAdapter(),
-            new FileDialogAdapter(),
+            fileDialogs,
             new DopusAdapter(),
             new TotalCommanderAdapter(),
             new XYplorerAdapter(),
@@ -81,6 +91,8 @@ internal sealed unsafe class App : IMenuCommands, IDisposable
         };
 
         _tracker = new HistoryTracker(_hwnd, _registry, _history);
+        _dialogStarter = new DialogStarter(_hwnd, _registry, fileDialogs, () => Cfg, _history.LastInApp);
+        _tracker.Activated += _dialogStarter.OnActivated;
         _tracker.Start();
 
         _hook = new MouseHook(_hwnd)
@@ -93,6 +105,8 @@ internal sealed unsafe class App : IMenuCommands, IDisposable
 
         if (_config.LastError is { } error)
             _tray.ShowBalloon("Folderite: config error", error);
+        else if (_hotkeyError is { } hotkeyError)
+            _tray.ShowBalloon("Folderite", hotkeyError);
 
         while (PInvoke.GetMessage(out MSG msg, HWND.Null, 0, 0) > 0)
         {
@@ -150,6 +164,12 @@ internal sealed unsafe class App : IMenuCommands, IDisposable
                 case PInvoke.WM_TIMER when wParam.Value == HistoryTracker.TimerId:
                     _tracker?.Flush();
                     return (LRESULT)0;
+                case PInvoke.WM_TIMER when wParam.Value == DialogStarter.TimerId:
+                    _dialogStarter?.OnTimer();
+                    return (LRESULT)0;
+                case PInvoke.WM_HOTKEY when wParam.Value == HotkeyId:
+                    OnHotkey();
+                    return (LRESULT)0;
                 case PInvoke.WM_TIMER when wParam.Value == SaveTimerId:
                     if (_history.IsDirty) _history.Save();
                     return (LRESULT)0;
@@ -182,6 +202,8 @@ internal sealed unsafe class App : IMenuCommands, IDisposable
                 _history.Clear();
                 _history.Save();
                 return 1;
+            case Ipc.GetHotkeyStatus:
+                return _hotkeyError is null ? Ipc.HotkeyOk : Ipc.HotkeyFailed;
             case Ipc.GetPaused:
                 return _hook?.Paused == true ? 1 : 0;
             case Ipc.SetPaused:
@@ -206,6 +228,74 @@ internal sealed unsafe class App : IMenuCommands, IDisposable
         _registry.DisabledProcesses = new HashSet<string>(Cfg.DisabledProcesses, StringComparer.OrdinalIgnoreCase);
         _history.SetExcludes(Cfg.HistoryExclude);
         _icons?.Clear();
+        ApplyHotkey();
+    }
+
+    /// <summary>(Re)registers the keyboard shortcut when its text changed. Failures are told once per change.</summary>
+    private void ApplyHotkey()
+    {
+        string text = (Cfg.Hotkey ?? "").Trim();
+        if (text == _hotkeyText) return;
+        if (_hotkeyText.Length > 0) PInvoke.UnregisterHotKey(_hwnd, HotkeyId);
+        _hotkeyText = text;
+        _hotkeyError = null;
+        if (text.Length == 0) return;
+
+        if (!Hotkey.TryParse(text, out var hotkey))
+            _hotkeyError = $"\"{text}\" isn't a keyboard shortcut Folderite understands. Set one in Settings › General.";
+        else if (!PInvoke.RegisterHotKey(_hwnd, HotkeyId, (HOT_KEY_MODIFIERS)((uint)hotkey.Modifiers | ModNoRepeat), hotkey.Key))
+            _hotkeyError = $"{hotkey} is already used by another app. Pick another shortcut in Settings › General.";
+        else
+            return;
+
+        Log.Info(_hotkeyError);
+        _tray?.ShowBalloon("Folderite", _hotkeyError);   // null during startup; Run shows it once the tray icon exists
+    }
+
+    /// <summary>
+    /// The shortcut opens the menu for the window in front, using its focused control where the mouse would give the
+    /// clicked one (Opus and Total Commander pick the panel from it). Without a supported window it's the tray menu.
+    /// </summary>
+    private void OnHotkey()
+    {
+        if (_hook?.Paused == true) return;
+        if (_menu.IsOpen)
+        {
+            PInvoke.EndMenu();   // pressed again: close it
+            return;
+        }
+
+        PInvoke.GetCursorPos(out var cursor);
+        HWND fg = PInvoke.GetForegroundWindow();
+        HWND root = fg.IsNull ? HWND.Null : PInvoke.GetAncestor(fg, GET_ANCESTOR_FLAGS.GA_ROOT);
+        if (!root.IsNull && root != _hwnd)
+        {
+            HWND focus = FocusedControl(root);
+            // No cursor: the menu wasn't opened by a click, so the "click is on the tab row" exemption doesn't apply.
+            var window = _registry.Describe(root, focus.IsNull ? root : focus);
+            if (_registry.Find(window) is { } adapter)
+            {
+                var (x, y) = MenuPointFor(root, cursor);
+                ShowFolderMenu(adapter, window, x, y);
+                return;
+            }
+        }
+        ShowFolderMenu(null, default, cursor.X, cursor.Y);
+    }
+
+    private static HWND FocusedControl(HWND root)
+    {
+        uint thread = PInvoke.GetWindowThreadProcessId(root, null);
+        var info = new GUITHREADINFO { cbSize = (uint)sizeof(GUITHREADINFO) };
+        return thread != 0 && PInvoke.GetGUIThreadInfo(thread, ref info) ? info.hwndFocus : HWND.Null;
+    }
+
+    /// <summary>At the mouse if it's over the window, else the window's centre.</summary>
+    private static (int X, int Y) MenuPointFor(HWND root, System.Drawing.Point cursor)
+    {
+        if (!PInvoke.GetWindowRect(root, out var r)) return (cursor.X, cursor.Y);
+        if (cursor.X >= r.left && cursor.X < r.right && cursor.Y >= r.top && cursor.Y < r.bottom) return (cursor.X, cursor.Y);
+        return ((r.left + r.right) / 2, (r.top + r.bottom) / 2);
     }
 
     private void OnTrigger(HWND root, int x, int y)
@@ -218,7 +308,9 @@ internal sealed unsafe class App : IMenuCommands, IDisposable
     private void ShowFolderMenu(ITargetAdapter? adapter, TargetWindow window, int x, int y)
     {
         string? current = adapter?.GetCurrentPath(window);
-        if (current is not null) _history.Record(current);
+        // Recent folders get a boost for the app the menu is opened over; the tray menu has no app.
+        string? app = adapter is null ? null : window.ProcessName;
+        if (current is not null) _history.Record(current, app);
 
         _target = window;
         _targetAdapter = adapter;
@@ -226,7 +318,7 @@ internal sealed unsafe class App : IMenuCommands, IDisposable
         var context = new MenuContext(
             current,
             Cfg.ShowOpenWindows ? OpenPaths() : [],
-            _history.Top(Cfg.RecentCount + 1),
+            _history.Top(Cfg.RecentCount + 1, app),
             Cfg.ShowClipboard ? Clipboard.GetFolderPath(_hwnd) : null);
         _menu.Show(MenuComposer.Build(Cfg, context, this), _hwnd, x, y);
     }
@@ -274,7 +366,7 @@ internal sealed unsafe class App : IMenuCommands, IDisposable
         }
         PInvoke.SetForegroundWindow((HWND)_target.Root);
         if (_targetAdapter.Navigate(_target, path))
-            _history.Record(path);
+            _history.Record(path, _target.ProcessName);
         else
             _tray?.ShowBalloon("Folderite", $"Couldn't open {path} in {_targetAdapter.Name}.");
     }
@@ -337,10 +429,15 @@ internal sealed unsafe class App : IMenuCommands, IDisposable
             _tray?.ShowBalloon("Folderite: config error", error);
     }
 
+    public FolderListing ListSubfolders(string path, bool newestFirst) => FolderLister.ListSubfolders(path, newestFirst);
+
+    public IReadOnlyList<DriveEntry> ListDrives() => FolderLister.ListDrives();
+
     private void Exit() => PInvoke.PostQuitMessage(0);
 
     public void Dispose()
     {
+        if (_hotkeyText.Length > 0 && !_hwnd.IsNull) PInvoke.UnregisterHotKey(_hwnd, HotkeyId);
         _hook?.Dispose();
         _tracker?.Dispose();
         _tray?.Dispose();

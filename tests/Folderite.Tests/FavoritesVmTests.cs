@@ -40,6 +40,8 @@ public sealed class FavoritesVmTests
     {
         Assert.Equal(expected.Name, actual.Name);
         Assert.Equal(expected.Path, actual.Path);
+        Assert.Equal(expected.ShowSubfolders, actual.ShowSubfolders);
+        Assert.Equal(expected.SortSubfolders, actual.SortSubfolders);
         Assert.Equal(expected.Items is null, actual.Items is null);
         if (expected.Items is null)
             return;
@@ -59,6 +61,100 @@ public sealed class FavoritesVmTests
         Assert.Equal(original.Count, back.Count);
         for (int i = 0; i < original.Count; i++)
             AssertEqual(original[i], back[i]);
+    }
+
+    [Fact]
+    public void Subfolders_RoundTripThroughViewModel()
+    {
+        var original = new List<FavoriteEntry>
+        {
+            new() { Name = "Plain", Path = @"C:\Plain" },
+            new() { Name = "ByName", Path = @"C:\ByName", ShowSubfolders = true },
+            new() { Name = "Newest", Path = @"C:\Newest", ShowSubfolders = true, SortSubfolders = FavoriteEntry.SortNewest },
+            new() { Name = "Group", Items = [new() { Name = "Inner", Path = @"C:\Inner", ShowSubfolders = true, SortSubfolders = "newest" }] },
+        };
+
+        var nodes = FavoriteNodeVm.FromConfig(original);
+
+        Assert.False(nodes[0].ShowSubfolders);
+        Assert.True(nodes[1].ShowSubfolders);
+        Assert.False(nodes[1].SubfoldersNewestFirst);
+        Assert.True(nodes[1].SubfoldersByName);
+        Assert.True(nodes[2].SubfoldersNewestFirst);
+        Assert.False(nodes[2].SubfoldersByName);
+        Assert.True(nodes[3].Children[0].SubfoldersNewestFirst);
+
+        var back = FavoriteNodeVm.ToConfig(nodes);
+        for (int i = 0; i < original.Count; i++)
+            AssertEqual(original[i], back[i]);
+    }
+
+    [Fact]
+    public void Subfolders_DefaultsWriteNothingExtra()
+    {
+        var entry = Assert.Single(FavoriteNodeVm.ToConfig([FavoriteNodeVm.NewFolder(@"C:\x")]));
+
+        Assert.False(entry.ShowSubfolders);
+        Assert.Null(entry.SortSubfolders);
+    }
+
+    [Fact]
+    public void Subfolders_ToConfig_WritesNewestAsNewestAndNameAsNull()
+    {
+        var node = FavoriteNodeVm.NewFolder(@"C:\x");
+        node.ShowSubfolders = true;
+        node.SubfoldersNewestFirst = true;
+        Assert.Equal("newest", FavoriteNodeVm.ToConfig([node])[0].SortSubfolders);
+
+        node.SubfoldersByName = true;
+        Assert.False(node.SubfoldersNewestFirst);
+        Assert.Null(FavoriteNodeVm.ToConfig([node])[0].SortSubfolders);
+    }
+
+    [Fact]
+    public void Subfolders_GroupAndSeparatorIgnoreTheProperties()
+    {
+        var group = FavoriteNodeVm.NewGroup("G");
+        group.ShowSubfolders = true;
+        var separator = FavoriteNodeVm.NewSeparator();
+        separator.ShowSubfolders = true;
+
+        var back = FavoriteNodeVm.ToConfig([group, separator]);
+
+        Assert.All(back, e => Assert.False(e.ShowSubfolders));
+        Assert.All(back, e => Assert.Null(e.SortSubfolders));
+    }
+
+    [Fact]
+    public void Subfolders_ChangingEitherProperty_RaisesTreeChanged()
+    {
+        var tree = LoadedTree();
+        int changed = 0;
+        tree.Changed += () => changed++;
+        var home = tree.Roots[0];
+
+        home.ShowSubfolders = true;
+        Assert.Equal(1, changed);
+
+        home.SubfoldersNewestFirst = true;
+        Assert.Equal(2, changed);
+
+        home.SubfoldersByName = true;
+        Assert.Equal(3, changed);
+    }
+
+    [Fact]
+    public void Subfolders_LoadingDoesNotRaiseTreeChanged()
+    {
+        var tree = new FavoritesTreeVm();
+        int changed = 0;
+        tree.Changed += () => changed++;
+
+        tree.Load([new() { Name = "A", Path = @"C:\A", ShowSubfolders = true, SortSubfolders = "newest" }]);
+
+        Assert.Equal(0, changed);
+        Assert.True(tree.Roots[0].ShowSubfolders);
+        Assert.Equal("newest", tree.ToConfig()[0].SortSubfolders);
     }
 
     [Fact]

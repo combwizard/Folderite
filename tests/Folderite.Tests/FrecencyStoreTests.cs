@@ -37,6 +37,46 @@ public sealed class FrecencyStoreTests : IDisposable
             .ToList();
     }
 
+    /// <summary>Like <see cref="Seed"/> but writes a version 2 file with per-app use.</summary>
+    private void SeedApps(params (string Path, double Rank, DateTimeOffset LastAccess, (string App, double Rank, DateTimeOffset LastAccess)[] Apps)[] entries)
+    {
+        var model = new
+        {
+            version = 2,
+            entries = entries.Select(e => new
+            {
+                path = e.Path,
+                rank = e.Rank,
+                lastAccess = e.LastAccess,
+                apps = e.Apps.Length == 0
+                    ? null
+                    : e.Apps.ToDictionary(a => a.App, a => new { rank = a.Rank, lastAccess = a.LastAccess }),
+            }).ToArray(),
+        };
+        File.WriteAllText(FilePath, JsonSerializer.Serialize(model));
+    }
+
+    /// <summary>Path to (app to rank) as stored in the file; entries without app data map to an empty dictionary.</summary>
+    private Dictionary<string, Dictionary<string, double>> ReadApps()
+    {
+        using var doc = JsonDocument.Parse(File.ReadAllText(FilePath));
+        return doc.RootElement.GetProperty("entries").EnumerateArray().ToDictionary(
+            e => e.GetProperty("path").GetString()!,
+            e => e.TryGetProperty("apps", out var apps)
+                ? apps.EnumerateObject().ToDictionary(a => a.Name, a => a.Value.GetProperty("rank").GetDouble())
+                : new Dictionary<string, double>());
+    }
+
+    /// <summary>Records <paramref name="times"/> visits, 3 s apart so none is debounced.</summary>
+    private void RecordTimes(FrecencyStore store, string path, int times, string? app = null)
+    {
+        for (var i = 0; i < times; i++)
+        {
+            store.Record(path, app);
+            Advance(TimeSpan.FromSeconds(3));
+        }
+    }
+
     [Fact]
     public void Top_MoreVisitsRankHigher()
     {
@@ -367,5 +407,372 @@ public sealed class FrecencyStoreTests : IDisposable
         Assert.True(store.IsDirty);
         Assert.Empty(store.Entries());
         Assert.Empty(store.Top(10));
+    }
+
+    // Scores at age < 1 h are rank x 4. InBlender: global 3 (12) + 3 x app 3 (36) = 48 with the app, 12 without.
+    // Elsewhere: global 4 (16) loses to 48 but beats 12; global 20 (80) beats 48 even with the app.
+    [Fact]
+    public void Top_WithApp_FolderUsedInThatAppBeatsSlightlyMorePopularFolder()
+    {
+        var store = NewStore();
+        RecordTimes(store, @"C:\Elsewhere", 4);
+        RecordTimes(store, @"C:\InBlender", 3, "blender");
+
+        Assert.Equal(new[] { @"C:\Elsewhere", @"C:\InBlender" }, store.Top(2));
+        Assert.Equal(new[] { @"C:\InBlender", @"C:\Elsewhere" }, store.Top(2, "blender"));
+    }
+
+    [Fact]
+    public void Top_WithApp_MuchMorePopularFolderStillWins()
+    {
+        var store = NewStore();
+        RecordTimes(store, @"C:\Elsewhere", 20);
+        RecordTimes(store, @"C:\InBlender", 3, "blender");
+
+        Assert.Equal(new[] { @"C:\Elsewhere", @"C:\InBlender" }, store.Top(2, "blender"));
+    }
+
+    [Fact]
+    public void Top_WithOtherApp_IgnoresUseInDifferentApp()
+    {
+        var store = NewStore();
+        RecordTimes(store, @"C:\Elsewhere", 4);
+        RecordTimes(store, @"C:\InBlender", 3, "blender");
+
+        Assert.Equal(new[] { @"C:\Elsewhere", @"C:\InBlender" }, store.Top(2, "notepad"));
+    }
+
+    [Fact]
+    public void Top_WithoutApp_MatchesGlobalOrderEvenWhenAppDataExists()
+    {
+        var store = NewStore();
+        RecordTimes(store, @"C:\Elsewhere", 4);
+        RecordTimes(store, @"C:\InBlender", 3, "blender");
+        var expected = new[] { @"C:\Elsewhere", @"C:\InBlender" };
+
+        Assert.Equal(expected, store.Top(2));
+        Assert.Equal(expected, store.Top(2, null));
+        Assert.Equal(expected, store.Top(2, ""));
+        Assert.Equal(expected, store.Top(2, "  "));
+    }
+
+    [Fact]
+    public void Top_WithApp_AppNameIsCaseAndExeInsensitive()
+    {
+        var store = NewStore();
+        RecordTimes(store, @"C:\Elsewhere", 4);
+        RecordTimes(store, @"C:\InBlender", 3, "Blender.EXE");
+
+        Assert.Equal(@"C:\InBlender", store.Top(1, "blender")[0]);
+        Assert.Equal(@"C:\InBlender", store.Top(1, "BLENDER.exe")[0]);
+    }
+
+    [Fact]
+    public void Top_WithApp_TiesGoToMostRecentlyAccessed()
+    {
+        // Identical combined scores (same ranks, same time bucket); only the global LastAccess differs.
+        var appUse = new[] { ("blender", 1.0, Start - TimeSpan.FromMinutes(20)) };
+        SeedApps(
+            (@"C:\Older", 2, Start - TimeSpan.FromMinutes(10), appUse),
+            (@"C:\Newer", 2, Start - TimeSpan.FromMinutes(5), appUse));
+        var store = NewStore();
+        store.Load();
+
+        Assert.Equal(new[] { @"C:\Newer", @"C:\Older" }, store.Top(2, "blender"));
+    }
+
+    [Fact]
+    public void Record_AppDebounceIsIndependentOfGlobalDebounce()
+    {
+        var store = NewStore();
+        store.Record(@"C:\A", "a");
+        Advance(TimeSpan.FromSeconds(1));
+        store.Record(@"C:\A", "b");   // global is a repeat, but app b is new
+        store.Save();
+
+        Assert.Equal(1.0, Assert.Single(ReadFile()).Rank);
+        Assert.Equal(new Dictionary<string, double> { ["a"] = 1, ["b"] = 1 }, ReadApps()[@"C:\A"]);
+    }
+
+    [Fact]
+    public void Record_GlobalCountsWhileAppIsStillDebounced()
+    {
+        var store = NewStore();
+        store.Record(@"C:\A", "a");                 // t0
+        Advance(TimeSpan.FromSeconds(1));
+        store.Record(@"C:\A", "b");                 // t1: b counted, global debounced
+        Advance(TimeSpan.FromSeconds(1.5));
+        store.Record(@"C:\A", "b");                 // t2.5: global is 2.5 s old (counts), b is 1.5 s old (debounced)
+        store.Save();
+
+        Assert.Equal(2.0, Assert.Single(ReadFile()).Rank);
+        Assert.Equal(new Dictionary<string, double> { ["a"] = 1, ["b"] = 1 }, ReadApps()[@"C:\A"]);
+    }
+
+    [Fact]
+    public void Record_BothDebounced_ChangesNothingAndStaysClean()
+    {
+        var store = NewStore();
+        store.Record(@"C:\A", "a");
+        store.Save();
+        Advance(TimeSpan.FromSeconds(1));
+        store.Record(@"C:\A", "a");
+
+        Assert.False(store.IsDirty);
+    }
+
+    [Fact]
+    public void Record_AfterTwoSeconds_CountsAppAgain()
+    {
+        var store = NewStore();
+        store.Record(@"C:\A", "a");
+        Advance(TimeSpan.FromSeconds(3));
+        store.Record(@"C:\A", "a");
+        store.Save();
+
+        Assert.Equal(2.0, ReadApps()[@"C:\A"]["a"]);
+    }
+
+    [Fact]
+    public void Record_AppUseOnlyChange_MarksDirty()
+    {
+        var store = NewStore();
+        store.Record(@"C:\A");
+        store.Save();
+        Advance(TimeSpan.FromSeconds(1));
+        store.Record(@"C:\A", "a");
+
+        Assert.True(store.IsDirty);
+    }
+
+    [Fact]
+    public void Record_ExcludedPathWithApp_IsIgnored()
+    {
+        var store = NewStore();
+        store.SetExcludes([@"C:\Secret\*"]);
+        store.Record(@"C:\Secret\Stuff", "a");
+
+        Assert.False(store.IsDirty);
+        Assert.Null(store.LastInApp("a"));
+    }
+
+    [Fact]
+    public void Record_WithoutApp_WritesNoAppsProperty()
+    {
+        var store = NewStore();
+        store.Record(@"C:\A");
+        store.Save();
+
+        Assert.DoesNotContain("apps", File.ReadAllText(FilePath), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Record_MoreThanTenApps_DropsLowestScoreButNeverTheOneJustRecorded()
+    {
+        // Ten apps with ranks 2..11, all a day old. The new app (rank 1, now) scores lowest of all but must survive;
+        // the weakest of the others ("app2") goes instead.
+        var old = Start - TimeSpan.FromDays(1);
+        SeedApps((@"C:\A", 20, old, Enumerable.Range(2, 10).Select(i => ($"app{i}", (double)i, old)).ToArray()));
+        var store = NewStore();
+        store.Load();
+
+        store.Record(@"C:\A", "newcomer");
+        store.Save();
+
+        var apps = ReadApps()[@"C:\A"];
+        Assert.Equal(10, apps.Count);
+        Assert.Contains("newcomer", apps.Keys);
+        Assert.DoesNotContain("app2", apps.Keys);
+        Assert.Contains("app3", apps.Keys);
+    }
+
+    [Fact]
+    public void Record_WhenTotalRankExceedsCap_ScalesAppRanksAndDropsTinyOnes()
+    {
+        // 999 entries at rank 10 = 9990, above the 9000 cap, so the next Record ages everything by 0.9.
+        // Entry 0 has app ranks 5 (-> 4.5, kept) and 1 (-> 0.9, dropped).
+        var old = Start - TimeSpan.FromDays(1);
+        SeedApps(Enumerable.Range(0, 999)
+            .Select(i => ($@"C:\Old\{i}", 10.0, old,
+                i == 0 ? new[] { ("big", 5.0, old), ("tiny", 1.0, old) } : Array.Empty<(string, double, DateTimeOffset)>()))
+            .ToArray());
+        var store = NewStore();
+        store.Load();
+
+        store.Record(@"C:\Fresh", "fresh");
+        store.Save();
+
+        var apps = ReadApps();
+        Assert.Equal(new[] { "big" }, apps[@"C:\Old\0"].Keys);
+        Assert.Equal(4.5, apps[@"C:\Old\0"]["big"], 10);
+        Assert.Empty(apps[@"C:\Old\1"]);
+        // The visit that triggered aging is spared even though 1 x 0.9 < 1, for the entry and its app use.
+        Assert.Equal(0.9, apps[@"C:\Fresh"]["fresh"], 10);
+    }
+
+    [Fact]
+    public void Record_WhenAgingDropsAnEntry_ItsAppDataGoesToo()
+    {
+        // 900 x 10 + 1 = 9001 is over the cap; "Weak" falls from 1 to 0.9 and is dropped along with its app use.
+        var old = Start - TimeSpan.FromDays(1);
+        var seeded = Enumerable.Range(0, 900)
+            .Select(i => ($@"C:\Old\{i}", 10.0, old, Array.Empty<(string, double, DateTimeOffset)>()))
+            .Append((@"C:\Weak", 1.0, old, new[] { ("a", 1.0, old) }))
+            .ToArray();
+        SeedApps(seeded);
+        var store = NewStore();
+        store.Load();
+
+        store.Record(@"C:\Fresh");
+        store.Save();
+
+        Assert.False(ReadApps().ContainsKey(@"C:\Weak"));
+        Assert.Null(store.LastInApp("a"));
+    }
+
+    [Fact]
+    public void LastInApp_ReturnsFolderWithLatestUseInThatApp()
+    {
+        var store = NewStore();
+        store.Record(@"C:\Early", "blender");
+        Advance(TimeSpan.FromSeconds(3));
+        store.Record(@"C:\Late", "blender");
+        Advance(TimeSpan.FromSeconds(3));
+        store.Record(@"C:\Other", "notepad");
+
+        Assert.Equal(@"C:\Late", store.LastInApp("blender"));
+        Assert.Equal(@"C:\Other", store.LastInApp("Notepad.exe"));
+    }
+
+    [Fact]
+    public void LastInApp_UsesTheAppsOwnLastAccessNotTheGlobalOne()
+    {
+        var store = NewStore();
+        store.Record(@"C:\B", "blender");            // blender use at t0
+        Advance(TimeSpan.FromSeconds(3));
+        store.Record(@"C:\A", "blender");            // blender use at t3
+        Advance(TimeSpan.FromSeconds(3));
+        store.Record(@"C:\B", "notepad");            // B's global access is now the latest, its blender use is not
+
+        Assert.Equal(@"C:\A", store.LastInApp("blender"));
+    }
+
+    [Fact]
+    public void LastInApp_SkipsExcludedPaths()
+    {
+        var store = NewStore();
+        store.Record(@"C:\Keep", "blender");
+        Advance(TimeSpan.FromSeconds(3));
+        store.Record(@"C:\Secret\Stuff", "blender");
+        store.SetExcludes([@"C:\Secret\*"]);
+
+        Assert.Equal(@"C:\Keep", store.LastInApp("blender"));
+    }
+
+    [Fact]
+    public void LastInApp_UnknownOrBlankApp_ReturnsNull()
+    {
+        var store = NewStore();
+        store.Record(@"C:\A", "blender");
+
+        Assert.Null(store.LastInApp("notepad"));
+        Assert.Null(store.LastInApp(""));
+        Assert.Null(store.LastInApp("   "));
+    }
+
+    [Fact]
+    public void LastInApp_OnlyExcludedPathsUsedInApp_ReturnsNull()
+    {
+        var store = NewStore();
+        store.Record(@"C:\Secret\Stuff", "blender");
+        store.SetExcludes([@"C:\Secret\*"]);
+
+        Assert.Null(store.LastInApp("blender"));
+    }
+
+    [Fact]
+    public void SaveThenLoad_RoundTripsAppData_AsVersion2()
+    {
+        var store = NewStore();
+        RecordTimes(store, @"C:\Elsewhere", 4);
+        RecordTimes(store, @"C:\InBlender", 3, "blender");
+        store.Record(@"C:\InBlender", "notepad");
+        store.Save();
+
+        using (var doc = JsonDocument.Parse(File.ReadAllText(FilePath)))
+            Assert.Equal(2, doc.RootElement.GetProperty("version").GetInt32());
+        Assert.Equal(new Dictionary<string, double> { ["blender"] = 3, ["notepad"] = 1 }, ReadApps()[@"C:\InBlender"]);
+        Assert.Empty(ReadApps()[@"C:\Elsewhere"]);
+
+        var reloaded = NewStore();
+        reloaded.Load();
+
+        Assert.Equal(store.Top(10, "blender"), reloaded.Top(10, "blender"));
+        Assert.Equal(new[] { @"C:\InBlender", @"C:\Elsewhere" }, reloaded.Top(2, "blender"));
+        Assert.Equal(@"C:\InBlender", reloaded.LastInApp("notepad"));
+        Assert.False(reloaded.IsDirty);
+    }
+
+    [Fact]
+    public void Load_Version1FileWithoutApps_Loads()
+    {
+        Seed((@"C:\A", 3, Start), (@"C:\B", 1, Start));
+        var store = NewStore();
+        store.Load();
+
+        Assert.Equal(new[] { @"C:\A", @"C:\B" }, store.Top(10));
+        Assert.Equal(new[] { @"C:\A", @"C:\B" }, store.Top(10, "blender"));
+        Assert.Null(store.LastInApp("blender"));
+    }
+
+    [Fact]
+    public void Load_SkipsInvalidAppUses()
+    {
+        var stamp = Start.ToString("O");
+        File.WriteAllText(FilePath, $$"""
+            { "version": 2, "entries": [ { "path": "C:\\A", "rank": 1, "lastAccess": "{{stamp}}", "apps": {
+                "good": { "rank": 2, "lastAccess": "{{stamp}}" },
+                "zero": { "rank": 0, "lastAccess": "{{stamp}}" },
+                "negative": { "rank": -1, "lastAccess": "{{stamp}}" },
+                "": { "rank": 4, "lastAccess": "{{stamp}}" },
+                " ": { "rank": 4, "lastAccess": "{{stamp}}" },
+                "missing": null
+            } } ] }
+            """);
+        var store = NewStore();
+        store.Load();
+        store.Save();
+
+        Assert.Equal(new Dictionary<string, double> { ["good"] = 2 }, ReadApps()[@"C:\A"]);
+        Assert.Null(store.LastInApp("zero"));
+        Assert.Null(store.LastInApp("negative"));
+        Assert.Equal(@"C:\A", store.LastInApp("good"));
+    }
+
+    [Fact]
+    public void Remove_DropsAppData()
+    {
+        var store = NewStore();
+        store.Record(@"C:\A", "blender");
+        store.Remove(@"C:\A");
+
+        Assert.Null(store.LastInApp("blender"));
+        Assert.Empty(store.Top(10, "blender"));
+
+        // Recording it afresh starts from zero: no app use is left over from before.
+        Advance(TimeSpan.FromSeconds(3));
+        store.Record(@"C:\A");
+        Assert.Null(store.LastInApp("blender"));
+    }
+
+    [Fact]
+    public void Clear_DropsAppData()
+    {
+        var store = NewStore();
+        store.Record(@"C:\A", "blender");
+        store.Clear();
+
+        Assert.Null(store.LastInApp("blender"));
+        Assert.Empty(store.Top(10, "blender"));
     }
 }

@@ -32,6 +32,9 @@ internal sealed unsafe class MenuBuilder
 
     public static string EscapeAmpersands(string text) => text.Replace("&", "&&");
 
+    /// <summary>A menu is showing (its modal loop is running).</summary>
+    public bool IsOpen => _theme is not null;
+
     /// <summary>Shows the menu modally at screen point (x, y). Runs the chosen item's action after the menu is destroyed.</summary>
     public bool Show(IReadOnlyList<MenuNode> nodes, nint owner, int x, int y)
     {

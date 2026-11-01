@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Reflection;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -8,11 +9,16 @@ using Folderite.Tray;
 
 namespace Folderite.Settings.ViewModels;
 
-/// <summary>General page: autostart, tray status/pause, config location and version.</summary>
+/// <summary>General page: autostart, tray status/pause, keyboard shortcut, config location and version.</summary>
 public sealed partial class GeneralVm : ObservableObject
 {
     private bool _refreshing;
     private bool _isPaused;
+    private SettingsVm? _settings;
+    private int _hotkeyCheck;
+
+    // The tray app reloads config.json about 300 ms after it changes on disk, then re-registers the shortcut.
+    private static readonly TimeSpan HotkeySettleTime = TimeSpan.FromMilliseconds(1500);
 
     public GeneralVm(ConfigStore store)
     {
@@ -61,6 +67,66 @@ public sealed partial class GeneralVm : ObservableObject
 
     [ObservableProperty]
     private bool isTrayRunning;
+
+    /// <summary>True when the tray app says another program already owns the keyboard shortcut.</summary>
+    [ObservableProperty]
+    private bool hotkeyConflict;
+
+    /// <summary>The keyboard shortcut, as text ("" = none). It lives in <see cref="SettingsVm"/>, which autosaves it.</summary>
+    public string Hotkey => _settings?.Hotkey ?? "";
+    public bool HasHotkey => Hotkey.Length > 0;
+
+    /// <summary>
+    /// The page's DataContext is this view model, but the shortcut is saved by the window's <see cref="SettingsVm"/>,
+    /// so the page hands that over once it is in the window. Safe to call again.
+    /// </summary>
+    internal void AttachSettings(SettingsVm settings)
+    {
+        if (_settings != settings)
+        {
+            if (_settings is not null)
+                _settings.PropertyChanged -= OnSettingsChanged;
+            _settings = settings;
+            settings.PropertyChanged += OnSettingsChanged;
+            OnPropertyChanged(nameof(Hotkey));
+            OnPropertyChanged(nameof(HasHotkey));
+        }
+        _ = CheckHotkeyAsync(TimeSpan.Zero);
+    }
+
+    internal void SetHotkey(string text)
+    {
+        if (_settings is not null)
+            _settings.Hotkey = text;
+    }
+
+    [RelayCommand]
+    public void ClearHotkey() => SetHotkey("");
+
+    private void OnSettingsChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(SettingsVm.Hotkey))
+            return;
+        OnPropertyChanged(nameof(Hotkey));
+        OnPropertyChanged(nameof(HasHotkey));
+        HotkeyConflict = false; // the old answer is about the old shortcut
+        _ = CheckHotkeyAsync(HotkeySettleTime);
+    }
+
+    /// <summary>Asks the tray app whether the shortcut registered. A newer check cancels an older one; no answer shows nothing.</summary>
+    private async Task CheckHotkeyAsync(TimeSpan delay)
+    {
+        int ticket = ++_hotkeyCheck;
+        if (delay > TimeSpan.Zero)
+            await Task.Delay(delay);
+        if (ticket != _hotkeyCheck)
+            return;
+
+        // No answer, or 0 from an older Folderite that doesn't know the command, shows nothing.
+        var answer = await Task.Run(() => Ipc.Send(Ipc.GetHotkeyStatus));
+        if (ticket == _hotkeyCheck)
+            HotkeyConflict = answer == Ipc.HotkeyFailed;
+    }
 
     public bool StartWithWindows
     {

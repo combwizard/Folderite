@@ -37,6 +37,7 @@ public sealed partial class SettingsVm : ObservableObject, IDisposable
         Watch(Actions);
         Watch(HistoryExclude);
         Watch(DisabledProcesses);
+        Watch(DialogFolders);
         Actions.CollectionChanged += (_, _) => RefreshActionCommands();
     }
 
@@ -44,6 +45,7 @@ public sealed partial class SettingsVm : ObservableObject, IDisposable
     public ObservableCollection<ActionVm> Actions { get; } = [];
     public ObservableCollection<StringItemVm> HistoryExclude { get; } = [];
     public ObservableCollection<StringItemVm> DisabledProcesses { get; } = [];
+    public ObservableCollection<DialogFolderVm> DialogFolders { get; } = [];
 
     [ObservableProperty]
     private ActionVm? selectedAction;
@@ -56,6 +58,16 @@ public sealed partial class SettingsVm : ObservableObject, IDisposable
 
     [ObservableProperty]
     private bool enableOnDesktop = true;
+
+    /// <summary>Keyboard shortcut text ("Win+Shift+F"), "" for none.</summary>
+    [ObservableProperty]
+    private string hotkey = "";
+
+    [ObservableProperty]
+    private bool showDrives;
+
+    [ObservableProperty]
+    private bool dialogLastFolder;
 
     [ObservableProperty]
     private string status = "";
@@ -88,6 +100,9 @@ public sealed partial class SettingsVm : ObservableObject, IDisposable
     partial void OnShowOpenWindowsChanged(bool value) => ScheduleSave();
     partial void OnShowClipboardChanged(bool value) => ScheduleSave();
     partial void OnEnableOnDesktopChanged(bool value) => ScheduleSave();
+    partial void OnHotkeyChanged(string value) => ScheduleSave();
+    partial void OnShowDrivesChanged(bool value) => ScheduleSave();
+    partial void OnDialogLastFolderChanged(bool value) => ScheduleSave();
     partial void OnSelectedActionChanged(ActionVm? value) => RefreshActionCommands();
 
     /// <summary>Resets everything from the store's current config without scheduling a save.</summary>
@@ -102,11 +117,15 @@ public sealed partial class SettingsVm : ObservableObject, IDisposable
             Fill(Actions, _baseline.Actions.Select(ActionVm.From));
             Fill(HistoryExclude, _baseline.HistoryExclude.Select(s => new StringItemVm(s)));
             Fill(DisabledProcesses, _baseline.DisabledProcesses.Select(s => new StringItemVm(s)));
+            Fill(DialogFolders, _baseline.DialogFolders.Select(DialogFolderVm.From));
             SelectedAction = null;
             RecentCount = _baseline.RecentCount;
             ShowOpenWindows = _baseline.ShowOpenWindows;
             ShowClipboard = _baseline.ShowClipboard;
             EnableOnDesktop = _baseline.EnableOnDesktop;
+            Hotkey = _baseline.Hotkey ?? "";
+            ShowDrives = _baseline.ShowDrives;
+            DialogLastFolder = _baseline.DialogLastFolder;
 
             LoadError = _store.LastError;
             AutosaveEnabled = LoadError is null;
@@ -153,6 +172,10 @@ public sealed partial class SettingsVm : ObservableObject, IDisposable
         config.EnableOnDesktop = EnableOnDesktop;
         config.HistoryExclude = Clean(HistoryExclude);
         config.DisabledProcesses = Clean(DisabledProcesses);
+        config.Hotkey = Hotkey.Trim();
+        config.ShowDrives = ShowDrives;
+        config.DialogLastFolder = DialogLastFolder;
+        config.DialogFolders = [.. DialogFolders.Select(d => d.ToConfig()).Where(d => d.App.Length > 0 && d.Path.Length > 0)];
         return config;
     }
 
@@ -235,6 +258,16 @@ public sealed partial class SettingsVm : ObservableObject, IDisposable
     {
         if (item is not null)
             HistoryExclude.Remove(item);
+    }
+
+    [RelayCommand]
+    private void AddDialogFolder() => DialogFolders.Add(new DialogFolderVm());
+
+    [RelayCommand]
+    private void RemoveDialogFolder(DialogFolderVm? item)
+    {
+        if (item is not null)
+            DialogFolders.Remove(item);
     }
 
     [RelayCommand]
