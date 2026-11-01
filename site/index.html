@@ -161,7 +161,7 @@
       <div class="feature-copy">
         <p class="feature-num">03</p>
         <h3>Recent folders, ranked by use</h3>
-        <p>Folderite notes the folders you visit in any supported file manager and ranks them by how often and how recently you went there, the way zoxide does. Your everyday folders rise to the top of Recent without you curating anything.</p>
+        <p>Folderite notes the folders you visit in any supported file manager and ranks them by how often and how recently you went there, the way zoxide does. Your everyday folders rise to the top of Recent without you curating anything, and folders you use in an app get a boost when you open the menu there.</p>
         <p class="feature-sub">Keep folders out with patterns like <code>C:\Windows\*</code> or <code>*\node_modules\*</code> under Settings&nbsp;›&nbsp;Exclusions. Remove entries or clear the list under Settings&nbsp;›&nbsp;History.</p>
       </div>
       <figure class="feature-media">
@@ -189,7 +189,7 @@
       <div class="feature-copy">
         <p class="feature-num">04</p>
         <h3>A settings window</h3>
-        <p>In Settings you drag favorites to reorder them or nest them in groups, drop folders in from Explorer, add your own actions next to the built-in <em>Open terminal here</em>, and choose which sections the menu shows. Changes apply as soon as you make them, and <em>Preview menu</em> shows you the real menu.</p>
+        <p>In Settings you drag favorites to reorder them or nest them in groups, drop folders in from Explorer, show a favorite's subfolders as a submenu, add your own actions next to the built-in <em>Open terminal here</em>, and choose which sections the menu shows. Changes apply as soon as you make them, and <em>Preview menu</em> shows you the real menu.</p>
         <p class="feature-sub">Rather edit text? It's all in one <code>config.json</code>. Move it next to the exe and Folderite becomes portable.</p>
       </div>
       <figure class="feature-media">
@@ -221,7 +221,7 @@
       </li>
       <li>
         <h3><span class="app-ico"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="3.5" width="15" height="13" rx="1.5"/><path d="M2.5 7h15M5.5 13.5h6M13.5 13.5h1.5"/></svg></span>Open &amp; Save dialogs</h3>
-        <p>The standard Windows file dialogs and folder pickers, in any app. Your typed file name is kept.</p>
+        <p>The standard Windows file dialogs and folder pickers, in any app. Your typed file name is kept. Dialogs can also open in the last folder you used in that app.</p>
       </li>
       <li>
         <h3><span class="app-ico"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="3.5" width="15" height="13" rx="1.5"/><path d="M10 3.5v13"/></svg></span>Directory Opus</h3>
@@ -288,6 +288,18 @@
         <summary>Can I turn it off for a while, or for one app?</summary>
         <div class="faq-a">
           <p>Choose <em>Pause</em> in the tray menu to turn it off until you resume. To leave one app alone for good, add it under Settings&nbsp;›&nbsp;Exclusions (<code>disabledProcesses</code> in the config).</p>
+        </div>
+      </details>
+      <details class="faq-q" id="q-keyboard">
+        <summary>Can I open the menu without a middle button?</summary>
+        <div class="faq-a">
+          <p>Yes. Set a keyboard shortcut under Settings&nbsp;›&nbsp;General. It opens the menu for the window in front. If that window isn't one Folderite supports, the folder you pick opens in a new Explorer window. You can also left-click the tray icon.</p>
+        </div>
+      </details>
+      <details class="faq-q" id="q-dialog-folder">
+        <summary>Can Open and Save dialogs start in a folder I choose?</summary>
+        <div class="faq-a">
+          <p>Yes, under Settings&nbsp;›&nbsp;Dialogs. Turn on <em>Start in the last folder used</em> and each app's dialogs open where you last were in that app, or set a fixed folder for a specific app. Both are off until you set them, and a file name you've typed is kept.</p>
         </div>
       </details>
       <details class="faq-q" id="q-settings">
