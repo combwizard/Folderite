@@ -82,7 +82,7 @@ internal sealed unsafe class App : IMenuCommands, IDisposable
         _icons = new IconCache();
         _menu = new MenuBuilder(_icons);
 
-        _tray = new TrayIcon(_hwnd, TrayMessage, "Folderite");
+        _tray = new TrayIcon(_hwnd, TrayMessage, $"Folderite {AppInfo.Version}".TrimEnd());
         _tray.ContextMenuRequested += ShowTrayMenu;
         _tray.Activated += () =>
         {

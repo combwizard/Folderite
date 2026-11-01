@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Reflection;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Folderite.Config;
@@ -26,7 +25,7 @@ public sealed partial class GeneralVm : ObservableObject
         ConfigDirectory = store.Directory;
         IsPortable = ConfigLocation.IsPortable;
         LocationKind = ConfigMove.KindOf(IsPortable, ConfigDirectory, ConfigLocation.DefaultDirectory);
-        Version = ReadVersion();
+        Version = AppInfo.Version;
         RefreshStatus();
     }
 
@@ -205,14 +204,5 @@ public sealed partial class GeneralVm : ObservableObject
         }
         await Task.Delay(1000);
         RefreshStatus();
-    }
-
-    private static string ReadVersion()
-    {
-        var info = Assembly.GetExecutingAssembly().GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
-            ?? Assembly.GetExecutingAssembly().GetName().Version?.ToString()
-            ?? "";
-        int plus = info.IndexOf('+');
-        return plus >= 0 ? info[..plus] : info;
     }
 }
