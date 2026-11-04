@@ -109,7 +109,7 @@
 
   // ---- Latest release version ----
 
-  const RELEASE_API = 'https://api.github.com/repos/combwizard/folderite/releases/latest';
+  const RELEASE_API = 'https://api.github.com/repos/combwizard/Folderite/releases/latest';
   const CACHE_KEY = 'folderite-release';
   const CACHE_MS = 10 * 60 * 1000;
 
