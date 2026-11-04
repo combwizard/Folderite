@@ -20,10 +20,10 @@ foreach ($f in $pages) {
     Copy-Item $src (Join-Path $OutFull $f)
 }
 
-# Screenshots and animations from docs/ (top level only).
+# Screenshots and animations from docs/images/.
 $imagesOut = Join-Path $OutFull 'images'
 New-Item -ItemType Directory -Path $imagesOut | Out-Null
-Get-ChildItem -LiteralPath (Join-Path $Repo 'docs') -File |
+Get-ChildItem -LiteralPath (Join-Path $Repo 'docs/images') -File |
     Where-Object { $_.Extension -in '.png', '.gif' } |
     ForEach-Object { Copy-Item $_.FullName (Join-Path $imagesOut $_.Name) }
 

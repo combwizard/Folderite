@@ -1,5 +1,5 @@
 # Captures the README/website screenshots and animations in the CURRENT Windows theme and writes
-# docs\<name>-light.* or docs\<name>-dark.*. Every capture is needed in both themes: switch Windows
+# docs\images\<name>-light.* or docs\images\<name>-dark.*. Every capture is needed in both themes: switch Windows
 # between light and dark mode (Settings > Personalization > Colors) and run this once in each.
 #
 # Takes over the mouse and keyboard for about a minute; don't touch them until it says "done".
@@ -13,7 +13,7 @@ $ErrorActionPreference = 'Stop'
 $here = $PSScriptRoot
 $repo = (Resolve-Path (Join-Path $here '..\..')).Path
 $work = Join-Path $here '.work'
-$docs = Join-Path $repo 'docs'
+$docs = Join-Path $repo 'docs\images'
 
 $light = (Get-ItemPropertyValue 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize' 'AppsUseLightTheme') -eq 1
 $theme = if ($light) { 'light' } else { 'dark' }

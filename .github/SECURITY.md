@@ -2,13 +2,13 @@
 
 ## Supported versions
 
-Only the [latest release](https://github.com/combwizard/folderite/releases/latest) gets security fixes. If you're on an older version, upgrade first and check whether the problem is still there.
+Only the [latest release](https://github.com/combwizard/Folderite/releases/latest) gets security fixes. If you're on an older version, upgrade first and check whether the problem is still there.
 
 ## Reporting a vulnerability
 
 Please don't open a public issue for security problems. Report them privately through GitHub instead:
 
-1. Go to the [Security tab](https://github.com/combwizard/folderite/security) of this repository.
+1. Go to the [Security tab](https://github.com/combwizard/Folderite/security) of this repository.
 2. Click **Report a vulnerability**.
 
 Include the Folderite version, your Windows version, the steps to reproduce, and what an attacker could do with it.
