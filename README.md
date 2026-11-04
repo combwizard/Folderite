@@ -1,15 +1,16 @@
 # Folderite
 
-[![CI](https://github.com/combwizard/folderite/actions/workflows/ci.yml/badge.svg)](https://github.com/combwizard/folderite/actions/workflows/ci.yml)
-[![Latest release](https://img.shields.io/github/v/release/combwizard/folderite)](https://github.com/combwizard/folderite/releases/latest)
+[![CI](https://github.com/combwizard/Folderite/actions/workflows/ci.yml/badge.svg)](https://github.com/combwizard/Folderite/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/combwizard/Folderite)](https://github.com/combwizard/Folderite/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Website](https://img.shields.io/badge/website-combwizard.github.io%2Ffolderite-f2b632)](https://combwizard.github.io/folderite/)
+[![Website](https://img.shields.io/badge/website-combwizard.github.io%2FFolderite-f2b632)](https://combwizard.github.io/Folderite/)
+[![Docs](https://img.shields.io/badge/docs-combwizard.github.io%2FFolderite%2Fdocs-3d9bff)](https://combwizard.github.io/Folderite/docs/)
 
 Middle-click in a file manager or Open/Save dialog to pop up a folder menu: favorites, folders open in other windows, recent folders (frecency-ranked), and the folder on the clipboard. Picking one sends *that* window there.
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/menu-dark.png">
-  <img src="docs/menu-light.png" alt="The Folderite menu over an Explorer window: the current folder, favorites, open windows, recent folders and the clipboard folder">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/menu-dark.png">
+  <img src="docs/images/menu-light.png" alt="The Folderite menu over an Explorer window: the current folder, favorites, open windows, recent folders and the clipboard folder">
 </picture>
 
 Supported: Windows Explorer (incl. Win11 tabs), common file dialogs, Directory Opus, Total Commander, XYplorer, Blender's file browser window, and the desktop (opens a new Explorer window).
@@ -17,7 +18,7 @@ Supported: Windows Explorer (incl. Win11 tabs), common file dialogs, Directory O
 ## Install
 
 1. Install the [.NET 10 Desktop Runtime (x64)](https://dotnet.microsoft.com/download/dotnet/10.0) if you don't have it.
-2. Download `Folderite-<version>-win-x64.zip` from the [latest release](https://github.com/combwizard/folderite/releases/latest), unzip it to a folder of your choice, and run `Folderite.exe`.
+2. Download `Folderite-<version>-win-x64.zip` from the [latest release](https://github.com/combwizard/Folderite/releases/latest), unzip it to a folder of your choice, and run `Folderite.exe`.
 
 To upgrade, quit Folderite from the tray and unzip the new release over the old folder. Your settings are kept.
 
@@ -33,6 +34,10 @@ dotnet test
 src\Folderite\bin\Debug\net10.0-windows\win-x64\Folderite.exe
 ```
 
+## Documentation
+
+The full guide is at [combwizard.github.io/Folderite/docs](https://combwizard.github.io/Folderite/docs/), built from [`docs/`](docs/).
+
 ## Usage
 
 Runs in the tray. Right-click the tray icon for Settings, Pause, Start with Windows, Edit config, and Exit. Left-click opens the folder menu; picking a folder there opens a new Explorer window.
@@ -42,15 +47,15 @@ You can also open the menu with a keyboard shortcut: set one under **Settings â†
 Middle-click inside Explorer and pick a favorite or a recent folder:
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/explorer-dark.gif">
-  <img src="docs/explorer-light.gif" alt="Middle-clicking in Explorer, picking Work > Specs, then a recent folder">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/explorer-dark.gif">
+  <img src="docs/images/explorer-light.gif" alt="Middle-clicking in Explorer, picking Work > Specs, then a recent folder">
 </picture>
 
 In an Open or Save dialog, the file name you typed is kept:
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/save-dialog-dark.gif">
-  <img src="docs/save-dialog-light.gif" alt="Middle-clicking in a Save As dialog and picking Work > Reports; the typed file name stays">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/save-dialog-dark.gif">
+  <img src="docs/images/save-dialog-light.gif" alt="Middle-clicking in a Save As dialog and picking Work > Reports; the typed file name stays">
 </picture>
 
 ## Settings
@@ -58,8 +63,8 @@ In an Open or Save dialog, the file name you typed is kept:
 **Settingsâ€¦** (tray menu, or the bottom of the folder menu) opens an editor for everything below: favorites (drag to reorder or nest, drop folders from Explorer), actions, menu sections, exclusions, start folders for Open/Save dialogs, your folder history, Start with Windows / Pause, and the keyboard shortcut. Changes save as you make them and the running app picks them up immediately. **Preview menu** shows the real menu with the current settings.
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/settings-dark.png">
-  <img src="docs/settings-light.png" alt="The Settings window on the Favorites page">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/settings-dark.png">
+  <img src="docs/images/settings-light.png" alt="The Settings window on the Favorites page">
 </picture>
 
 Settings rewrites `config.json` when it saves, so `//` comments in it are not kept. If the file has an error, Settings stops saving until it is fixed.
@@ -117,25 +122,11 @@ Recent folders are ranked by how often and how recently you used them, with a bo
 
 ## Manual test checklist
 
-- [ ] Explorer: menu shows; favorite navigates; with several tabs, the *active* tab navigates
-- [ ] Explorer (Win11): middle-click on a tab still closes it (tab row is exempt)
-- [ ] Open/Save dialog (Notepad, Office, browser): navigates; typed filename is kept
-- [ ] Folder picker dialog: navigates instead of accepting the folder
-- [ ] Directory Opus dual pane: clicked side navigates
-- [ ] Total Commander: left/right panel, non-ASCII path *(untested so far)*
-- [ ] XYplorer: `::goto` with spaces *(untested so far)*
-- [ ] Blender 5.x File View (Open, Import with options panel, folder picker): navigates from a click on the bookmarks and on the file list; clipboard (text and image) comes back; typed filename is kept
-- [ ] Middle-click elsewhere (browser tab, editor) still works normally
-- [ ] Elevated Explorer/dialog: fails gracefully unless Folderite runs elevated
-- [ ] Keyboard shortcut: opens the menu for Explorer (active tab), a file dialog, Directory Opus (focused side) and the desktop; elsewhere picking a folder opens a new Explorer window; does nothing while paused; a shortcut that's taken shows a warning in Settings
-- [ ] Favorite with subfolders: submenu lists subfolders (by name / newest first); the folder itself is the bold top item; a disconnected network folder doesn't freeze the menu
-- [ ] Recent folders: folders used in the current app rank higher there
-- [ ] Dialog start folder: off by default; when on, a new Open/Save dialog moves to the app's last folder and keeps the typed file name; a per-app folder wins; folder pickers work
-- [ ] Drives submenu (when enabled): lists drives with free space; a disconnected network drive doesn't hang the menu
+The list of what to try by hand before a release is in [Build from source](docs/building.md#manual-test-checklist).
 
 ## Screenshots
 
-Every screenshot and animation in `docs/` exists in a light and a dark version (`<name>-light.*`, `<name>-dark.*`); the README and the website pick one by the viewer's theme. To retake them, switch Windows to light mode and run `pwsh tools\screenshots\capture.ps1`, then switch to dark mode and run it again. It drives a demo setup with made-up folders on a temporary `X:` drive and takes over the mouse for about a minute.
+Every screenshot and animation in `docs/images/` exists in a light and a dark version (`<name>-light.*`, `<name>-dark.*`); the README and the website pick one by the viewer's theme. To retake them, switch Windows to light mode and run `pwsh tools\screenshots\capture.ps1`, then switch to dark mode and run it again. It drives a demo setup with made-up folders on a temporary `X:` drive and takes over the mouse for about a minute.
 
 ## Releasing
 

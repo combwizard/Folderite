@@ -1,0 +1,83 @@
+# Folderite documentation, published at https://combwizard.github.io/Folderite/docs/ by .github/workflows/pages.yml.
+# Preview locally:  pip install -r requirements-docs.txt  then  mkdocs serve
+site_name: Folderite
+site_description: A middle-click folder menu for Windows.
+site_url: https://combwizard.github.io/Folderite/docs/
+repo_url: https://github.com/combwizard/Folderite
+repo_name: combwizard/Folderite
+edit_uri: edit/main/docs/
+copyright: Folderite is free software under the MIT license.
+
+docs_dir: docs
+# Never the default. MkDocs defaults to site/ and empties it first, and site/ is the landing page's source here.
+site_dir: site/.preview/docs
+
+nav:
+  - Home: index.md
+  - Getting started:
+      - install.md
+      - getting-started.md
+  - Using Folderite:
+      - menu.md
+      - settings.md
+      - dialogs.md
+      - apps.md
+      - config.md
+      - files.md
+      - troubleshooting.md
+  - Under the hood:
+      - how-it-works.md
+      - building.md
+
+theme:
+  name: material
+  # Header, footer and logo are reshaped to match the landing page.
+  custom_dir: docs-theme
+  favicon: assets/icon.png
+  logo: assets/icon.png
+  font: false
+  icon:
+    repo: fontawesome/brands/github
+  # Follows the system's light or dark mode, like the landing page: docs-theme/partials/javascripts/palette.html.
+  palette:
+    scheme: default
+    primary: custom
+    accent: custom
+  features:
+    - navigation.sections
+    - navigation.footer
+    - navigation.top
+    - navigation.instant
+    - search.suggest
+    - search.highlight
+    - toc.follow
+    - content.code.copy
+    - content.action.edit
+
+plugins:
+  - search
+
+extra_css:
+  - stylesheets/extra.css
+
+# Click a picture to see it larger.
+extra_javascript:
+  - javascripts/lightbox.js
+
+extra:
+  homepage: https://combwizard.github.io/Folderite/
+  generator: false
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.superfences
+  - pymdownx.details
+
+validation:
+  links:
+    anchors: warn
