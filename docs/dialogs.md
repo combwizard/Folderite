@@ -24,17 +24,27 @@ The folder you were in is also recorded in [history](settings.md#history) under 
 
 ## Navigating and keeping your file name
 
-Pick a folder in the menu and the dialog moves there. If you had already typed a file name, it stays:
+Pick a folder in the menu and the dialog moves there. If you had already typed a file name, it stays.
 
-1. Folderite puts the folder path in the **File name** box and presses the dialog's **Open** or **Save** button. The dialog treats a folder path as "go there".
+In a **Save** dialog, Folderite types the path into the dialog's address bar and presses **Enter** there, so the **File name** box isn't touched.
+
+In an **Open** dialog:
+
+1. Folderite puts the folder path in the **File name** box and presses the dialog's **Open** button. The dialog treats a folder path as "go there".
 2. It waits until the dialog shows the new folder.
 3. It puts your text back in the **File name** box.
 
 The text is only restored if the box is empty or still holds the folder path. If you changed the box while the dialog was moving, Folderite leaves it alone. If you had typed nothing, the box stays empty.
 
+An Open dialog with no file types uses the address bar, like a Save dialog.
+
 ## Folder pickers
 
 A folder picker (the dialog that asks you to choose a folder) has no file type box, and pressing its confirm button would accept the folder instead of opening it. So Folderite types the path into the dialog's address bar and presses **Enter** there, which opens the folder without choosing it. If it can't find the address bar, a tray notification says `Couldn't open <path> in File dialog.`
+
+## In folders such as Documents
+
+When a dialog is in a known folder such as Documents, Downloads or Desktop, its address bar has no text box yet. Folderite presses **Ctrl+L** to open one, then puts the keyboard focus back where it was, so **Enter** still saves or selects. It only presses the keys while the dialog is in front. If the dialog isn't in front, the move fails with the same notification.
 
 ## Start folders
 
