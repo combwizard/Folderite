@@ -9,7 +9,7 @@ This page follows one middle-click from the mouse to the folder change, then cov
 | Mouse hook | `src/Folderite/Hooks/MouseHook.cs` | Global middle-click hook on its own thread. Swallows the click and its release when the window is supported. |
 | Window to adapter | `src/Folderite/Targets/TargetRegistry.cs` | Turns the window under the cursor into an adapter, or nothing. Applies the disabled-apps list. |
 | Explorer | `src/Folderite/Targets/ExplorerAdapter.cs` | `Shell.Application` COM. The active Windows 11 tab is found through `ShellTabWindowClass`. |
-| File dialogs | `src/Folderite/Targets/FileDialogAdapter.cs` | Reads the breadcrumb caption. Navigates through the file name box and OK, or through the address bar for folder pickers. |
+| File dialogs | `src/Folderite/Targets/FileDialogAdapter.cs` | Reads the breadcrumb caption. Navigates through the file name box and OK in Open dialogs, or through the address bar in Save dialogs and folder pickers. |
 | Directory Opus | `src/Folderite/Targets/ThirdParty/DopusAdapter.cs` | Runs `dopusrt.exe`. |
 | Total Commander | `src/Folderite/Targets/ThirdParty/TotalCommanderAdapter.cs` | `WM_USER+50` queries to read, `WM_COPYDATA` with a `CD` command to navigate. |
 | XYplorer | `src/Folderite/Targets/ThirdParty/XYplorerAdapter.cs` | Reads the title bar, navigates with a `::goto` script sent by `WM_COPYDATA`. |
@@ -73,8 +73,9 @@ Folderite reads and drives Explorer through the `Shell.Application` COM object, 
 `FileDialogAdapter` matches a `#32770` dialog that has a `DUIViewWndClassName` or `SHELLDLL_DefView` child.
 
 - **Read:** the dialog's address bar is a breadcrumb toolbar whose caption reads `Address: C:\...`, with the word in the user's language. Folderite finds the `ToolbarWindow32` whose parent is `Breadcrumb Parent`, cuts the text after the first `: `, and keeps it if it's a rooted path.
-- **Navigate in an Open or Save dialog:** put the path into the file name box and send OK, the same as typing a folder into the box and pressing Enter. The dialog treats a folder as "go there". The old text of the box is saved first. The dialog clears the box once it arrives, so Folderite waits (up to about a second) until the breadcrumb shows the new folder and then puts your text back, unless you've typed something else.
-- **Navigate in a folder picker:** a dialog without a file-type box is a folder picker. OK there would accept the current folder, so Folderite types the path into the address bar's edit control and sends Enter to that control directly. A posted Enter would go through the dialog's own key handling and turn into OK.
+- **Navigate in an Open dialog:** put the path into the file name box and send OK, the same as typing a folder into the box and pressing Enter. The dialog treats a folder as "go there". The old text of the box is saved first. The dialog clears the box once it arrives, so Folderite waits (up to about a second) until the breadcrumb shows the new folder and then puts your text back, unless you've typed something else.
+- **Navigate in any other dialog:** a dialog without a file-type box among its direct children takes the address bar. That covers folder pickers, where OK would accept the current folder, and Save dialogs, whose controls are nested with no ids. Text set in a Save dialog's nested file name box doesn't count, and OK then saves under the old name in the old folder. Folderite types the path into the address bar's edit control and sends Enter to that control directly. A posted Enter would go through the dialog's own key handling and turn into OK.
+- **No edit control:** in a known folder such as Documents, the address bar has no edit control until real input asks for one. Messages don't create it. With the dialog in front, Folderite sends Ctrl+L, waits for the control, and navigates. The bar turns back into path buttons a moment later and takes the focus, so Folderite then moves the focus back to where it was.
 
 `FileNameHasFolder` reports whether the file name box already holds a path, which means the app chose where to save. The dialog start folder feature uses it to leave such dialogs alone.
 

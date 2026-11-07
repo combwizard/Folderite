@@ -42,8 +42,9 @@ There are no tests for Explorer, the file dialogs or the third-party apps. Those
 
 - Explorer: menu shows; favorite navigates; with several tabs, the *active* tab navigates
 - Explorer (Win11): middle-click on a tab still closes it (tab row is exempt)
-- Open/Save dialog (Notepad, Office, browser): navigates; typed filename is kept
+- Open/Save dialog (Notepad, Office, browser): navigates; typed filename is kept; pressing Enter afterward saves or opens
 - Folder picker dialog: navigates instead of accepting the folder
+- All three dialogs, starting in Documents or Downloads as well as in a plain folder
 - Directory Opus dual pane: clicked side navigates
 - Total Commander: left/right panel, non-ASCII path *(untested so far)*
 - XYplorer: `::goto` with spaces *(untested so far)*
