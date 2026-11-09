@@ -18,6 +18,11 @@
                 </StackPanel>
             </ContentControl>
 
+            <ContentControl Style="{StaticResource SettingRow}" s:Setting.Icon="&#xE81C;" s:Setting.Title="Show recent folders for this app"
+                            s:Setting.Description="Add a second submenu with the folders you use most in the app the menu is opened over.">
+                <CheckBox MinWidth="0" IsChecked="{Binding ShowAppRecent}" />
+            </ContentControl>
+
             <ContentControl Style="{StaticResource SettingRow}" s:Setting.Icon="&#xE8A7;" s:Setting.Title="Show open windows"
                             s:Setting.Description="List the folders that are open in Explorer windows right now.">
                 <CheckBox MinWidth="0" IsChecked="{Binding ShowOpenWindows}" />

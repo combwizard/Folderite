@@ -366,12 +366,14 @@ public sealed class SettingsVmTests : IDisposable
         config.DialogFolders = [new() { App = "notepad", Path = @"D:\Notes" }];
         config.Hotkey = "Ctrl+Alt+F";
         config.ShowDrives = true;
+        config.ShowAppRecent = true;
 
         var vm = NewVm(config);
 
         Assert.True(vm.DialogLastFolder);
         Assert.Equal("Ctrl+Alt+F", vm.Hotkey);
         Assert.True(vm.ShowDrives);
+        Assert.True(vm.ShowAppRecent);
         var row = Assert.Single(vm.DialogFolders);
         Assert.Equal("notepad", row.App);
         Assert.Equal(@"D:\Notes", row.Path);
@@ -382,6 +384,7 @@ public sealed class SettingsVmTests : IDisposable
         Assert.True(built.DialogLastFolder);
         Assert.Equal("Ctrl+Alt+F", built.Hotkey);
         Assert.True(built.ShowDrives);
+        Assert.True(built.ShowAppRecent);
         var saved = Assert.Single(built.DialogFolders);
         Assert.Equal("notepad", saved.App);
         Assert.Equal(@"D:\Notes", saved.Path);

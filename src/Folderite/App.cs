@@ -308,19 +308,46 @@ internal sealed unsafe class App : IMenuCommands, IDisposable
     private void ShowFolderMenu(ITargetAdapter? adapter, TargetWindow window, int x, int y)
     {
         string? current = adapter?.GetCurrentPath(window);
-        // Recent folders get a boost for the app the menu is opened over; the tray menu has no app.
+        // The folder counts as used in the app the menu is opened over; the tray menu has no app.
         string? app = adapter is null ? null : window.ProcessName;
         if (current is not null) _history.Record(current, app);
 
         _target = window;
         _targetAdapter = adapter;
 
+        bool appRecent = Cfg.ShowAppRecent && adapter is not null && !string.IsNullOrEmpty(app);
         var context = new MenuContext(
             current,
             Cfg.ShowOpenWindows ? OpenPaths() : [],
-            _history.Top(Cfg.RecentCount + 1, app),
-            Cfg.ShowClipboard ? Clipboard.GetFolderPath(_hwnd) : null);
+            _history.Top(Cfg.RecentCount + 1),
+            Cfg.ShowClipboard ? Clipboard.GetFolderPath(_hwnd) : null,
+            appRecent ? AppDisplayName(adapter!, window) : null,
+            appRecent ? _history.TopInApp(Cfg.RecentCount + 1, app!) : null);
         _menu.Show(MenuComposer.Build(Cfg, context, this), _hwnd, x, y);
+    }
+
+    /// <summary>
+    /// The app's name in the "Recent in ..." submenu: a supported file manager's own name, or for a file dialog the
+    /// program's description from its version info, falling back to the process name.
+    /// </summary>
+    private static string AppDisplayName(ITargetAdapter adapter, TargetWindow window)
+    {
+        if (adapter is DesktopAdapter) return "Explorer";
+        if (adapter is not FileDialogAdapter) return adapter.Name;
+        try
+        {
+            if (Win32.GetProcessImagePath(window.ProcessId) is { } exe)
+            {
+                var info = FileVersionInfo.GetVersionInfo(exe);
+                var name = string.IsNullOrWhiteSpace(info.FileDescription) ? info.ProductName : info.FileDescription;
+                if (!string.IsNullOrWhiteSpace(name)) return name.Trim();
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
+        {
+            // No version info: use the process name.
+        }
+        return window.ProcessName;
     }
 
     private List<string> OpenPaths()

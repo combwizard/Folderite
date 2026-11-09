@@ -20,8 +20,10 @@ public sealed class MenuComposerTests
         string? current = null,
         IEnumerable<string>? open = null,
         IEnumerable<string>? recent = null,
-        string? clipboard = null) =>
-        new(current, (open ?? []).ToList(), (recent ?? []).ToList(), clipboard);
+        string? clipboard = null,
+        string? appName = null,
+        IEnumerable<string>? appRecent = null) =>
+        new(current, (open ?? []).ToList(), (recent ?? []).ToList(), clipboard, appName, appRecent?.ToList());
 
     private static IReadOnlyList<MenuNode> Build(AppConfig config, MenuContext ctx, IMenuCommands? cmd = null) =>
         MenuComposer.Build(config, ctx, cmd ?? new FakeCommands());
@@ -361,6 +363,73 @@ public sealed class MenuComposerTests
         var item = Assert.IsType<MenuItem>(Assert.Single(recent.Children));
         Assert.Equal("Reports", item.Text);
         Assert.Equal(@"C:\Work", item.Detail);
+    }
+
+    [Fact]
+    public void AppRecent_OffByDefault_NotShown()
+    {
+        var nodes = Build(Config(), Ctx(recent: [@"C:\A"], appName: "Notepad", appRecent: [@"C:\B"]));
+
+        Assert.DoesNotContain(nodes.OfType<SubMenu>(), s => s.Text.StartsWith("Recent &in"));
+    }
+
+    [Fact]
+    public void AppRecent_WhenOn_FollowsRecentInTheSameSection()
+    {
+        var cmd = new FakeCommands();
+        var config = Config();
+        config.ShowAppRecent = true;
+
+        var nodes = Build(config, Ctx(recent: [@"C:\A"], appName: "Directory Opus", appRecent: [@"C:\Work\B"]), cmd);
+
+        int recent = nodes.ToList().FindIndex(n => n is SubMenu { Text: "&Recent" });
+        int app = nodes.ToList().FindIndex(n => n is SubMenu { Text: "Recent &in Directory Opus" });
+        Assert.Equal(recent + 1, app);
+        var item = Assert.IsType<MenuItem>(Assert.Single(((SubMenu)nodes[app]).Children));
+        Assert.Equal("B", item.Text);
+        Assert.Equal(@"C:\Work", item.Detail);
+        item.OnInvoke();
+        Assert.Equal(new[] { @"C:\Work\B" }, cmd.Navigated);
+    }
+
+    [Fact]
+    public void AppRecent_ShownEvenWhenRecentIsEmpty_WithItsOwnSeparator()
+    {
+        var config = Config();
+        config.ShowAppRecent = true;
+
+        var nodes = Build(config, Ctx(appName: "Notepad", appRecent: [@"C:\B"]));
+
+        Assert.DoesNotContain(nodes.OfType<SubMenu>(), s => s.Text == "&Recent");
+        int app = nodes.ToList().FindIndex(n => n is SubMenu { Text: "Recent &in Notepad" });
+        Assert.IsType<MenuSeparator>(nodes[app - 1]);
+    }
+
+    [Fact]
+    public void AppRecent_ExcludesCurrentPath_RespectsRecentCount_EscapesAppName()
+    {
+        var config = Config();
+        config.ShowAppRecent = true;
+        config.RecentCount = 2;
+
+        var nodes = Build(config, Ctx(Current, appName: "R&D Tool", appRecent: [Current, @"C:\A", @"C:\B", @"C:\C"]));
+
+        var app = nodes.OfType<SubMenu>().Single(s => s.Text == "Recent &in R&&D Tool");
+        Assert.Equal(new[] { @"C:\A", @"C:\B" }, app.Children.Cast<MenuItem>().Select(i => i.IconPath));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public void AppRecent_NoAppOrNothingUsedThere_NotShown(string? appName)
+    {
+        var config = Config();
+        config.ShowAppRecent = true;
+
+        Assert.DoesNotContain(Build(config, Ctx(appName: appName, appRecent: [@"C:\B"])).OfType<SubMenu>(),
+            s => s.Text.StartsWith("Recent &in"));
+        Assert.DoesNotContain(Build(config, Ctx(appName: "Notepad", appRecent: [])).OfType<SubMenu>(),
+            s => s.Text.StartsWith("Recent &in"));
     }
 
     [Fact]

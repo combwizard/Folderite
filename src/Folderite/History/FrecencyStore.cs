@@ -13,13 +13,17 @@ public sealed class FrecencyStore
     private const double MaxTotalRank = 9000;
     private const int MaxAppsPerEntry = 10;
 
-    /// <summary>
-    /// How much a folder's use in the asked-about app counts relative to its use overall. At 3, a few uses in the app
-    /// outweigh a modest lead elsewhere, but a far more popular folder still wins.
-    /// </summary>
-    private const double AppWeight = 3;
-
     private static readonly TimeSpan DebounceWindow = TimeSpan.FromSeconds(2);
+
+    /// <summary>
+    /// File types file managers open as folders (Directory Opus, and Explorer for zip). A path through one of these is
+    /// a place inside an archive, not a folder, so it is never recorded.
+    /// </summary>
+    private static readonly HashSet<string> ArchiveExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".zip", ".7z", ".rar", ".tar", ".gz", ".tgz", ".bz2", ".tbz", ".tbz2", ".xz", ".txz", ".zst", ".lz", ".lzma",
+        ".cab", ".iso", ".wim", ".lzh", ".lha", ".arj", ".jar", ".cbz", ".cbr",
+    };
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -61,7 +65,7 @@ public sealed class FrecencyStore
                 foreach (var e in file?.Entries ?? [])
                 {
                     var path = Normalize(e?.Path);
-                    if (path is null || e is null || !double.IsFinite(e.Rank) || e.Rank <= 0)
+                    if (path is null || e is null || !double.IsFinite(e.Rank) || e.Rank <= 0 || IsInArchive(path))
                         continue;
                     loaded[path] = new Entry { Path = path, Rank = e.Rank, LastAccess = e.LastAccess, Apps = LoadApps(e.Apps) };
                 }
@@ -134,12 +138,13 @@ public sealed class FrecencyStore
     /// <summary>
     /// Records a visit to a folder. Repeats within 2 seconds are ignored. When <paramref name="app"/> names the
     /// process the folder was used in (e.g. "notepad"), that app's use of the folder is counted too. The app use has
-    /// its own 2-second debounce, so a repeat in one signal never hides a fresh one in the other.
+    /// its own 2-second debounce, so a repeat in one signal never hides a fresh one in the other. Places inside archives
+    /// (a zip file opened as a folder) are ignored.
     /// </summary>
     public void Record(string path, string? app = null)
     {
         var key = Normalize(path);
-        if (key is null)
+        if (key is null || IsInArchive(key))
             return;
         var appKey = NormalizeApp(app);
 
@@ -221,25 +226,45 @@ public sealed class FrecencyStore
         lock (_lock) _excludes = list;
     }
 
-    /// <summary>
-    /// Returns up to <paramref name="count"/> folders ordered by frecency. Does not touch the disk.
-    /// With <paramref name="app"/>, a folder's use in that app adds to its score, so the app's own folders float up.
-    /// </summary>
-    public IReadOnlyList<string> Top(int count, string? app = null)
+    /// <summary>Returns up to <paramref name="count"/> folders ordered by frecency over all apps. Does not touch the disk.</summary>
+    public IReadOnlyList<string> Top(int count)
     {
         if (count <= 0)
             return [];
-        var appKey = NormalizeApp(app);
 
         lock (_lock)
         {
             var now = _time.GetUtcNow();
             return _entries.Values
                 .Where(e => !IsExcluded(e.Path))
-                .OrderByDescending(e => Score(e, now) + (appKey is null ? 0 : AppWeight * AppScore(e, appKey, now)))
+                .OrderByDescending(e => Score(e, now))
                 .ThenByDescending(e => e.LastAccess)
                 .Take(count)
                 .Select(e => e.Path)
+                .ToList();
+        }
+    }
+
+    /// <summary>
+    /// Returns up to <paramref name="count"/> folders used in <paramref name="app"/>, ordered by frecency counting only
+    /// the visits made in that app. Folders never used there are left out. Does not touch the disk.
+    /// </summary>
+    public IReadOnlyList<string> TopInApp(int count, string app)
+    {
+        var appKey = NormalizeApp(app);
+        if (count <= 0 || appKey is null)
+            return [];
+
+        lock (_lock)
+        {
+            var now = _time.GetUtcNow();
+            return _entries.Values
+                .Where(e => e.Apps is not null && e.Apps.ContainsKey(appKey) && !IsExcluded(e.Path))
+                .Select(e => (e.Path, Use: e.Apps![appKey]))
+                .OrderByDescending(x => Score(x.Use.Rank, x.Use.LastAccess, now))
+                .ThenByDescending(x => x.Use.LastAccess)
+                .Take(count)
+                .Select(x => x.Path)
                 .ToList();
         }
     }
@@ -310,8 +335,24 @@ public sealed class FrecencyStore
 
     private static double Score(Entry e, DateTimeOffset now) => Score(e.Rank, e.LastAccess, now);
 
-    private static double AppScore(Entry e, string app, DateTimeOffset now) =>
-        e.Apps is not null && e.Apps.TryGetValue(app, out var use) ? Score(use.Rank, use.LastAccess, now) : 0;
+    /// <summary>
+    /// True when the path, or a folder above it, is an archive, as in "C:\Downloads\tools.zip\bin". A part with an archive
+    /// extension counts unless it is a real folder, so a folder called "x.zip" is still recorded, and a place in an
+    /// archive that has since been deleted still counts. Only those parts are checked on disk.
+    /// </summary>
+    internal static bool IsInArchive(string path)
+    {
+        var rootLength = Path.GetPathRoot(path)?.Length ?? 0;
+        for (var i = rootLength; i <= path.Length; i++)
+        {
+            if (i < path.Length && path[i] != Path.DirectorySeparatorChar)
+                continue;
+            var prefix = path[..i];
+            if (prefix.Length > rootLength && ArchiveExtensions.Contains(Path.GetExtension(prefix)) && !Directory.Exists(prefix))
+                return true;
+        }
+        return false;
+    }
 
     private static double Score(double rank, DateTimeOffset lastAccess, DateTimeOffset now)
     {

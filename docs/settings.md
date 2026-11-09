@@ -151,6 +151,7 @@ Which sections the folder menu has. The page heading is **Sections**.
 | Setting | Default | What it does |
 | --- | --- | --- |
 | **Recent folders** | 15 | A slider from 0 to 50. The number of folders in the **Recent** submenu. At 0 the submenu is hidden. |
+| **Show recent folders for this app** | Off | Adds a second submenu under **Recent**, such as **Recent in Notepad**, with the folders you use most in the app the menu is opened over. It lists up to **Recent folders** entries. See [Recent folders for this app](menu.md#recent-folders-for-this-app). |
 | **Show open windows** | On | Adds an **Open windows** list with the folders open right now in Explorer and the other supported file managers, up to 10. |
 | **Show clipboard folder** | On | Adds a **Clipboard** item when the clipboard holds a folder path, unless it is the folder you are already in. |
 | **Show drives** | Off | Adds a **Drives** submenu with the free space on each drive. |
@@ -201,7 +202,7 @@ Programs listed here are ignored: Folderite does not open its menu over them wit
 
 ## History
 
-The folders Folderite has seen, ranked by how often and how recently you visit them. The **Recent** submenu uses the same ranking and adds a boost for folders used in the app the menu is opened over. This page reads `history.json`, not `config.json`, and its changes apply right away. The list refreshes each time you open the page.
+The folders Folderite has seen, ranked by how often and how recently you visit them. The **Recent** submenu uses the same ranking. This page reads `history.json`, not `config.json`, and its changes apply right away. The list refreshes each time you open the page.
 
 Each row shows the folder name, its parent folder, and when you last used it (**just now**, **5 min ago**, **3 h ago**, **yesterday**, **12 days ago**, and a date after 30 days). Hover over a row for the full path. Under the list, a line shows how many folders are listed out of the total.
 

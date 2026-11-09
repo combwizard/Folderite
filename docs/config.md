@@ -30,6 +30,7 @@ If you keep notes in comments, keep them in a copy of the file, or edit by hand 
 | --- | --- | --- | --- |
 | `favorites` | list of [favorite entries](#favorites) | `[]` (see below) | The favorites section of the menu. |
 | `recentCount` | number | `15` | How many folders the **Recent** submenu lists. `0` hides the submenu. A negative number counts as `0`. Settings limits it to 0 to 50 (**Menu > Recent folders**). |
+| `showAppRecent` | true or false | `false` | Add a **Recent in** submenu with the folders used most in the app the menu is opened over. It lists up to `recentCount` folders. |
 | `historyExclude` | list of text | `[]` | [Wildcard patterns](#history-exclusions) for folders that are never remembered. |
 | `actions` | list of [actions](#actions) | one action, **Open &terminal here** | Commands in the current folder's submenu. |
 | `disabledProcesses` | list of text | `[]` | Program names, without `.exe`, where Folderite does nothing. |
@@ -46,7 +47,7 @@ Some defaults need a note:
 - **`favorites`.** A key that is missing means no favorites. On first run, Folderite creates the file with four: `&Home` (your user folder), `&Desktop`, `Do&wnloads` and `D&ocuments`, each written as a full path.
 - **`actions`.** A key that is missing gives the one default action, `Open &terminal here`, which runs `wt.exe` with `-d "{path}"`. To have no actions at all, write `"actions": []`.
 
-Where each key appears in Settings: `favorites` on **Favorites**, `actions` on **Actions**, `recentCount`, `showOpenWindows`, `showClipboard`, `showDrives` and `enableOnDesktop` on **Menu**, `dialogLastFolder` and `dialogFolders` on **Dialogs**, `historyExclude` and `disabledProcesses` on **Exclusions**, and `hotkey` on **General**. See [Settings](settings.md).
+Where each key appears in Settings: `favorites` on **Favorites**, `actions` on **Actions**, `recentCount`, `showAppRecent`, `showOpenWindows`, `showClipboard`, `showDrives` and `enableOnDesktop` on **Menu**, `dialogLastFolder` and `dialogFolders` on **Dialogs**, `historyExclude` and `disabledProcesses` on **Exclusions**, and `hotkey` on **General**. See [Settings](settings.md).
 
 ## Favorites
 
@@ -207,6 +208,7 @@ Every key appears once.
     ]}
   ],
   "recentCount": 15,
+  "showAppRecent": false,             // a second submenu: the folders used most in this app
   "historyExclude": ["C:\\Windows\\*", "*\\node_modules\\*"],
   "actions": [
     { "name": "Open &terminal here", "command": "wt.exe", "args": "-d \"{path}\"" },

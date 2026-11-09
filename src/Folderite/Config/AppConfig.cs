@@ -10,6 +10,9 @@ public sealed class AppConfig
     /// <summary>Number of recent folders shown in the Recent submenu.</summary>
     public int RecentCount { get; set; } = 15;
 
+    /// <summary>Add a second submenu with the folders used most in the app the menu is opened over.</summary>
+    public bool ShowAppRecent { get; set; }
+
     /// <summary>Wildcard patterns (* and ?) of paths never recorded in history, e.g. "C:\\Windows\\*".</summary>
     public List<string> HistoryExclude { get; set; } = [];
 

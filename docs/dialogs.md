@@ -20,7 +20,7 @@ Folderite reads the folder from the address bar of the dialog (the breadcrumb). 
 - The menu header shows the folder the dialog is in, with **Copy path**, your [actions](settings.md#actions) and **Add to favorites**.
 - If the dialog is somewhere that is not a folder path, such as **This PC** or a library, there is no current folder. The menu still opens and navigation still works, but the current-folder submenu is missing, and so are the actions.
 
-The folder you were in is also recorded in [history](settings.md#history) under the program's name, which is how **Recent** favors the folders you use in that program.
+The folder you were in is also recorded in [history](settings.md#history) under the program's name. That is where [Recent folders for this app](menu.md#recent-folders-for-this-app) gets the folders you use in that program.
 
 ## Navigating and keeping your file name
 
