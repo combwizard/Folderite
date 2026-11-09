@@ -409,76 +409,127 @@ public sealed class FrecencyStoreTests : IDisposable
         Assert.Empty(store.Top(10));
     }
 
-    // Scores at age < 1 h are rank x 4. InBlender: global 3 (12) + 3 x app 3 (36) = 48 with the app, 12 without.
-    // Elsewhere: global 4 (16) loses to 48 but beats 12; global 20 (80) beats 48 even with the app.
     [Fact]
-    public void Top_WithApp_FolderUsedInThatAppBeatsSlightlyMorePopularFolder()
+    public void Top_IgnoresAppUse()
     {
         var store = NewStore();
         RecordTimes(store, @"C:\Elsewhere", 4);
         RecordTimes(store, @"C:\InBlender", 3, "blender");
 
         Assert.Equal(new[] { @"C:\Elsewhere", @"C:\InBlender" }, store.Top(2));
-        Assert.Equal(new[] { @"C:\InBlender", @"C:\Elsewhere" }, store.Top(2, "blender"));
     }
 
     [Fact]
-    public void Top_WithApp_MuchMorePopularFolderStillWins()
+    public void TopInApp_ListsOnlyFoldersUsedInThatApp()
     {
         var store = NewStore();
         RecordTimes(store, @"C:\Elsewhere", 20);
         RecordTimes(store, @"C:\InBlender", 3, "blender");
+        store.Record(@"C:\InNotepad", "notepad");
 
-        Assert.Equal(new[] { @"C:\Elsewhere", @"C:\InBlender" }, store.Top(2, "blender"));
+        Assert.Equal(new[] { @"C:\InBlender" }, store.TopInApp(10, "blender"));
+        Assert.Equal(new[] { @"C:\InNotepad" }, store.TopInApp(10, "notepad"));
+        Assert.Empty(store.TopInApp(10, "zbrush"));
     }
 
     [Fact]
-    public void Top_WithOtherApp_IgnoresUseInDifferentApp()
+    public void TopInApp_RanksByUseInThatAppNotOverall()
     {
         var store = NewStore();
-        RecordTimes(store, @"C:\Elsewhere", 4);
-        RecordTimes(store, @"C:\InBlender", 3, "blender");
+        RecordTimes(store, @"C:\PopularElsewhere", 10);
+        Advance(TimeSpan.FromSeconds(3));
+        store.Record(@"C:\PopularElsewhere", "blender");
+        Advance(TimeSpan.FromSeconds(3));
+        RecordTimes(store, @"C:\BlenderOften", 3, "blender");
 
-        Assert.Equal(new[] { @"C:\Elsewhere", @"C:\InBlender" }, store.Top(2, "notepad"));
+        Assert.Equal(new[] { @"C:\PopularElsewhere", @"C:\BlenderOften" }, store.Top(2));
+        Assert.Equal(new[] { @"C:\BlenderOften", @"C:\PopularElsewhere" }, store.TopInApp(2, "blender"));
     }
 
     [Fact]
-    public void Top_WithoutApp_MatchesGlobalOrderEvenWhenAppDataExists()
+    public void TopInApp_AppNameIsCaseAndExeInsensitive()
     {
         var store = NewStore();
-        RecordTimes(store, @"C:\Elsewhere", 4);
-        RecordTimes(store, @"C:\InBlender", 3, "blender");
-        var expected = new[] { @"C:\Elsewhere", @"C:\InBlender" };
-
-        Assert.Equal(expected, store.Top(2));
-        Assert.Equal(expected, store.Top(2, null));
-        Assert.Equal(expected, store.Top(2, ""));
-        Assert.Equal(expected, store.Top(2, "  "));
-    }
-
-    [Fact]
-    public void Top_WithApp_AppNameIsCaseAndExeInsensitive()
-    {
-        var store = NewStore();
-        RecordTimes(store, @"C:\Elsewhere", 4);
         RecordTimes(store, @"C:\InBlender", 3, "Blender.EXE");
 
-        Assert.Equal(@"C:\InBlender", store.Top(1, "blender")[0]);
-        Assert.Equal(@"C:\InBlender", store.Top(1, "BLENDER.exe")[0]);
+        Assert.Equal(new[] { @"C:\InBlender" }, store.TopInApp(1, "blender"));
+        Assert.Equal(new[] { @"C:\InBlender" }, store.TopInApp(1, "BLENDER.exe"));
     }
 
     [Fact]
-    public void Top_WithApp_TiesGoToMostRecentlyAccessed()
+    public void TopInApp_BlankAppOrZeroCount_IsEmpty()
     {
-        // Identical combined scores (same ranks, same time bucket); only the global LastAccess differs.
-        var appUse = new[] { ("blender", 1.0, Start - TimeSpan.FromMinutes(20)) };
+        var store = NewStore();
+        store.Record(@"C:\A", "blender");
+
+        Assert.Empty(store.TopInApp(10, ""));
+        Assert.Empty(store.TopInApp(10, "  "));
+        Assert.Empty(store.TopInApp(0, "blender"));
+    }
+
+    [Fact]
+    public void TopInApp_SkipsExcludedPaths()
+    {
+        var store = NewStore();
+        store.Record(@"C:\Keep", "blender");
+        store.Record(@"C:\Temp\Drop", "blender");
+        store.SetExcludes([@"C:\Temp\*"]);
+
+        Assert.Equal(new[] { @"C:\Keep" }, store.TopInApp(10, "blender"));
+    }
+
+    [Fact]
+    public void TopInApp_TiesGoToMostRecentUseInThatApp()
+    {
+        // Same app rank and time bucket; only the app's LastAccess differs, and it runs the other way to the global one.
         SeedApps(
-            (@"C:\Older", 2, Start - TimeSpan.FromMinutes(10), appUse),
-            (@"C:\Newer", 2, Start - TimeSpan.FromMinutes(5), appUse));
+            (@"C:\Older", 2, Start - TimeSpan.FromMinutes(5), [("blender", 1.0, Start - TimeSpan.FromMinutes(20))]),
+            (@"C:\Newer", 2, Start - TimeSpan.FromMinutes(10), [("blender", 1.0, Start - TimeSpan.FromMinutes(15))]));
         var store = NewStore();
         store.Load();
 
-        Assert.Equal(new[] { @"C:\Newer", @"C:\Older" }, store.Top(2, "blender"));
+        Assert.Equal(new[] { @"C:\Newer", @"C:\Older" }, store.TopInApp(2, "blender"));
+    }
+
+    [Fact]
+    public void Record_PlaceInsideArchive_IsIgnored()
+    {
+        var zip = Path.Combine(_temp.Root, "tools.zip");
+        File.WriteAllBytes(zip, [0x50, 0x4B, 0x05, 0x06, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+        var store = NewStore();
+        store.Record(zip);
+        store.Record(Path.Combine(zip, "bin"), "dopus");
+        store.Record(Path.Combine(zip, "bin", "x64"));
+
+        Assert.Empty(store.Top(10));
+        Assert.Empty(store.TopInApp(10, "dopus"));
+        Assert.False(store.IsDirty);
+    }
+
+    [Fact]
+    public void Record_FolderNamedLikeAnArchive_IsRecorded()
+    {
+        var folder = Path.Combine(_temp.Root, "backup.zip");
+        Directory.CreateDirectory(Path.Combine(folder, "inner"));
+        var store = NewStore();
+        store.Record(folder);
+        Advance(TimeSpan.FromSeconds(3));
+        store.Record(Path.Combine(folder, "inner"));
+
+        Assert.Equal(2, store.Top(10).Count);
+    }
+
+    [Fact]
+    public void Load_DropsPlacesInsideArchives()
+    {
+        var zip = Path.Combine(_temp.Root, "tools.7z");
+        File.WriteAllText(zip, "not really an archive");
+        var deleted = Path.Combine(_temp.Root, "gone.zip");   // the archive was deleted after the visit
+        Seed((Path.Combine(zip, "bin"), 3, Start), (Path.Combine(deleted, "src"), 2, Start), (@"C:\Real", 1, Start));
+        var store = NewStore();
+        store.Load();
+
+        Assert.Equal(new[] { @"C:\Real" }, store.Top(10));
     }
 
     [Fact]
@@ -707,8 +758,8 @@ public sealed class FrecencyStoreTests : IDisposable
         var reloaded = NewStore();
         reloaded.Load();
 
-        Assert.Equal(store.Top(10, "blender"), reloaded.Top(10, "blender"));
-        Assert.Equal(new[] { @"C:\InBlender", @"C:\Elsewhere" }, reloaded.Top(2, "blender"));
+        Assert.Equal(store.Top(10), reloaded.Top(10));
+        Assert.Equal(new[] { @"C:\InBlender" }, reloaded.TopInApp(10, "blender"));
         Assert.Equal(@"C:\InBlender", reloaded.LastInApp("notepad"));
         Assert.False(reloaded.IsDirty);
     }
@@ -721,7 +772,7 @@ public sealed class FrecencyStoreTests : IDisposable
         store.Load();
 
         Assert.Equal(new[] { @"C:\A", @"C:\B" }, store.Top(10));
-        Assert.Equal(new[] { @"C:\A", @"C:\B" }, store.Top(10, "blender"));
+        Assert.Empty(store.TopInApp(10, "blender"));
         Assert.Null(store.LastInApp("blender"));
     }
 
@@ -757,7 +808,7 @@ public sealed class FrecencyStoreTests : IDisposable
         store.Remove(@"C:\A");
 
         Assert.Null(store.LastInApp("blender"));
-        Assert.Empty(store.Top(10, "blender"));
+        Assert.Empty(store.TopInApp(10, "blender"));
 
         // Recording it afresh starts from zero: no app use is left over from before.
         Advance(TimeSpan.FromSeconds(3));
@@ -773,6 +824,6 @@ public sealed class FrecencyStoreTests : IDisposable
         store.Clear();
 
         Assert.Null(store.LastInApp("blender"));
-        Assert.Empty(store.Top(10, "blender"));
+        Assert.Empty(store.TopInApp(10, "blender"));
     }
 }

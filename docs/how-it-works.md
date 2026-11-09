@@ -133,7 +133,7 @@ For a click on a supported window:
 
 1. The hook thread sees the middle-button press, finds the adapter, swallows the click and posts a trigger message.
 2. The main thread resolves the window again with the click point and gets the adapter. (`App.OnTrigger`.)
-3. `App.ShowFolderMenu` asks the adapter for the current folder, and records it in history. It collects the open windows from every adapter, the top recent folders, and the folder on the clipboard.
+3. `App.ShowFolderMenu` asks the adapter for the current folder, and records it in history. It collects the open windows from every adapter, the top recent folders, and the folder on the clipboard. With `showAppRecent` on, it also gets the top folders for the app's process and a name for the submenu: the adapter's name, such as Directory Opus, or for a file dialog the program's file description.
 4. `MenuComposer.Build` makes a menu tree from the config and this context.
 5. `MenuBuilder.Show` shows it and waits for you to pick.
 6. The chosen item's action runs after the menu is gone. For a folder, `App.Navigate` brings the target window to the front, calls the adapter's `Navigate`, and records the folder in history for that app. If `Navigate` fails, a tray balloon says so.
@@ -162,13 +162,7 @@ A folder's score is its rank times a factor that depends on how long ago you las
 | Less than 7 days ago | 0.5 |
 | Longer ago | 0.25 |
 
-So that the **Recent** list can favor the app you're in, the sort key is:
-
-```text
-score(folder) + 3 * score(folder's use in this app)
-```
-
-where each `score` is rank times the factor for that last-used time. The factor `3` is `AppWeight`. A few uses in the current app outweigh a modest lead elsewhere, but a far more popular folder still wins. Ties go to the most recent visit. With no app (the tray icon), the second term is zero.
+`Top` sorts by that score, with ties going to the most recent visit. It ignores the per-app numbers, so **Recent** is the same list everywhere. `TopInApp`, used for the **Recent in** submenu when `showAppRecent` is on, sorts only the folders used in one app, by the score of their use in that app, with ties going to the most recent visit in that app. The per-app numbers also give `LastInApp`, the start folder for **Start in the last folder used** (see [Open and Save dialogs](dialogs.md)).
 
 The rest of the rules:
 
@@ -177,6 +171,7 @@ The rest of the rules:
 - At most 1000 folders are kept. If there are more, the lowest scores go first.
 - At most 10 apps are kept for each folder.
 - Folders that match a pattern in `historyExclude` are neither recorded nor returned.
+- A place inside an archive, such as `C:\Downloads\tools.zip\bin`, is neither recorded nor loaded. Folderite looks for a part of the path with an archive extension (`.zip`, `.7z`, `.rar`, `.iso` and other common ones) and treats the path as inside an archive unless that part is a real folder. Only those parts are checked on disk. A real folder named `backup.zip` is still recorded, and a place in an archive that has since been deleted is still left out.
 - The menu asks for `recentCount + 1` folders, since one may be the current folder, which is left out.
 
 History is saved in `history.json`, written to a temporary file that then replaces the old one. The tray app saves it every 60 seconds if it changed, when Settings asks for it, and when it exits.

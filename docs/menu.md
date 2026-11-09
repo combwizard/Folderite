@@ -25,6 +25,7 @@ Sections are separated by lines. A section that has nothing to show leaves out i
 | [Favorites](#favorites) | You have favorites |
 | [Open windows](#open-windows) | **Show open windows** is on, and another window is open on a folder |
 | [Recent](#recent-folders) | **Recent folders** is above 0 and there is a folder to list |
+| [Recent in this app](#recent-folders-for-this-app) | **Show recent folders for this app** is on (off by default), and you have used a folder in the app the menu is over. It shares a section with **Recent**. |
 | [Drives](#drives) | **Show drives** is on (off by default) |
 | [Clipboard](#clipboard-folder) | **Show clipboard folder** is on, and the clipboard holds a folder path that is not the current folder |
 | [Settings… and Reload](#settings-and-reload) | Always |
@@ -85,9 +86,9 @@ File dialogs, Blender and the desktop add nothing to this list.
 
 ### Recent folders
 
-The **Recent** submenu lists the folders you use most, best first. It shows up to **Recent folders** entries (15 by default, 0 to 50 in Settings). It leaves out the folder you are in. A folder can appear in both **Open windows** and **Recent**. With 0, the section is hidden.
+The **Recent** submenu lists the folders you use most, best first. It is the same list in every app, and over the tray icon. It shows up to **Recent folders** entries (15 by default, 0 to 50 in Settings). It leaves out the folder you are in. A folder can appear in both **Open windows** and **Recent**. With 0, the section is hidden.
 
-Folderite learns folders without any action from you. It notes a folder when you move to it in Explorer, a file dialog, Directory Opus, Total Commander or XYplorer, when you bring such a window to the front, when you open the menu over it, and when you pick it from the menu. A repeat within 2 seconds counts once. Folders that match a pattern under **Exclusions**, **Don't remember these folders**, are never recorded. Use **History** in Settings to look at the list, remove a folder, or clear it.
+Folderite learns folders without any action from you. It notes a folder when you move to it in Explorer, a file dialog, Directory Opus, Total Commander or XYplorer, when you bring such a window to the front, when you open the menu over it, and when you pick it from the menu. A repeat within 2 seconds counts once. Folders that match a pattern under **Exclusions**, **Don't remember these folders**, are never recorded. Places inside an archive are not recorded either, such as a zip file you browse into in Explorer or a 7z, RAR or ISO file in Directory Opus. Use **History** in Settings to look at the list, remove a folder, or clear it.
 
 #### How recent folders are ranked
 
@@ -104,9 +105,13 @@ Each visit adds 1 to a folder's count. The count is then multiplied by how long 
 
 The folder with the highest result comes first. A tie goes to the folder used most recently.
 
-**The boost for the current app.** Folderite also counts the visits made in each app, using the program name (`explorer`, `notepad`, and so on). When you open the menu over an app, each folder's score gets three times its score in that app, worked out the same way. A few visits in that app outweigh a modest lead elsewhere, so over Notepad's Save dialog the folders you use with Notepad rise. A folder you use far more overall still wins. Opening the menu from the tray icon has no app, so there is no boost.
-
 Folderite keeps at most 1,000 folders. When the total of all counts grows past 9,000, every count shrinks by 10 percent and folders that fall below 1 are dropped. History is saved to `history.json` every minute and when Folderite exits. See [Files and logs](files.md).
+
+### Recent folders for this app
+
+Turn on **Show recent folders for this app** on the **Menu** page of Settings (`showAppRecent`) to get a second submenu under **Recent**, named for the app the menu is over: **Recent in Directory Opus**, **Recent in Explorer**, or for a file dialog the program's name, such as **Recent in Notepad**. It lists the folders you have used in that app, best first, so over Notepad's Save dialog you see the folders you save to from Notepad.
+
+Folderite counts the visits made in each app separately, by program name (`explorer`, `dopus`, `notepad`, and so on). This submenu ranks folders the same way as **Recent**, using only the visits made in that app. A folder you have never used in the app is not listed. It shows up to **Recent folders** entries, leaves out the folder you are in, and is hidden when there is nothing to list. Opening the menu from the tray icon has no app, so the submenu is not shown there.
 
 ### Drives
 
@@ -129,7 +134,7 @@ Every named item has an accelerator key. While the menu is open, press the lette
 
 - In a name you write yourself, put `&` before the letter: `&Projects` is picked with **P**. Type `&&` for a plain ampersand.
 - When no item has the letter marked, items whose name starts with that letter match. This is how you reach recent folders, open windows, subfolders and drives, which carry no `&`.
-- The built-in items use these letters: **C** for **Copy path**, **A** for **Add to favorites**, **R** for **Recent**, **V** for **Drives**, **L** for **Clipboard**, **S** for **Settings…**, **D** for **Reload**. The starter favorites use **H**, **D**, **W** and **O**. The starter action uses **T**.
+- The built-in items use these letters: **C** for **Copy path**, **A** for **Add to favorites**, **R** for **Recent**, **I** for **Recent in** the app, **V** for **Drives**, **L** for **Clipboard**, **S** for **Settings…**, **D** for **Reload**. The starter favorites use **H**, **D**, **W** and **O**. The starter action uses **T**.
 - If one letter matches only one item in the open menu, it is picked at once. If it matches several, the first press highlights the next match after the current one, and each further press moves to the following match. Press **Enter** to pick the highlighted item.
 
 The arrow keys, **Enter** and **Esc** work as in any Windows menu.

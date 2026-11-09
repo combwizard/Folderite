@@ -67,6 +67,9 @@ public sealed partial class SettingsVm : ObservableObject, IDisposable
     private bool showDrives;
 
     [ObservableProperty]
+    private bool showAppRecent;
+
+    [ObservableProperty]
     private bool dialogLastFolder;
 
     [ObservableProperty]
@@ -102,6 +105,7 @@ public sealed partial class SettingsVm : ObservableObject, IDisposable
     partial void OnEnableOnDesktopChanged(bool value) => ScheduleSave();
     partial void OnHotkeyChanged(string value) => ScheduleSave();
     partial void OnShowDrivesChanged(bool value) => ScheduleSave();
+    partial void OnShowAppRecentChanged(bool value) => ScheduleSave();
     partial void OnDialogLastFolderChanged(bool value) => ScheduleSave();
     partial void OnSelectedActionChanged(ActionVm? value) => RefreshActionCommands();
 
@@ -125,6 +129,7 @@ public sealed partial class SettingsVm : ObservableObject, IDisposable
             EnableOnDesktop = _baseline.EnableOnDesktop;
             Hotkey = _baseline.Hotkey ?? "";
             ShowDrives = _baseline.ShowDrives;
+            ShowAppRecent = _baseline.ShowAppRecent;
             DialogLastFolder = _baseline.DialogLastFolder;
 
             LoadError = _store.LastError;
@@ -174,6 +179,7 @@ public sealed partial class SettingsVm : ObservableObject, IDisposable
         config.DisabledProcesses = Clean(DisabledProcesses);
         config.Hotkey = Hotkey.Trim();
         config.ShowDrives = ShowDrives;
+        config.ShowAppRecent = ShowAppRecent;
         config.DialogLastFolder = DialogLastFolder;
         config.DialogFolders = [.. DialogFolders.Select(d => d.ToConfig()).Where(d => d.App.Length > 0 && d.Path.Length > 0)];
         return config;

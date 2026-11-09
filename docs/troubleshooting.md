@@ -99,6 +99,11 @@ The reason is Windows' own text, for example that the file can't be found. Check
 - Folders matching a pattern in **Exclusions** are never recorded, and hidden if they were recorded earlier. See [History exclusions](config.md#history-exclusions).
 - Folderite records folders from windows it supports only, and not in an app on the disabled list.
 - You cleared the history on the **History** page.
+- Places inside a zip, 7z, RAR, ISO or other archive file are not recorded, and ones recorded by older versions are dropped.
+
+### The Recent in submenu is missing
+
+It is off by default. Turn on **Settings > Menu > Show recent folders for this app**. It is not shown over the tray icon, and it is hidden in an app where you have not used a folder yet.
 
 ### The Drives submenu is missing
 

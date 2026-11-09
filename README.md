@@ -83,6 +83,7 @@ Settings rewrites `config.json` when it saves, so `//` comments in it are not ke
     ]}
   ],
   "recentCount": 15,
+  "showAppRecent": false,             // a second submenu: the folders used most in this app
   "historyExclude": ["C:\\Windows\\*", "*\\node_modules\\*"],
   "actions": [
     { "name": "Open &terminal here", "command": "wt.exe", "args": "-d \"{path}\"" },
@@ -103,7 +104,7 @@ Settings rewrites `config.json` when it saves, so `//` comments in it are not ke
 
 `&` marks the accelerator key in names. History lives in `history.json`, and errors are logged to `folderite.log`, both in the same folder.
 
-Recent folders are ranked by how often and how recently you used them, with a boost for folders used in the app the menu is opened over.
+Recent folders are ranked by how often and how recently you used them, and the list is the same in every app. With `showAppRecent` on, a second submenu lists the folders used most in the app the menu is opened over.
 
 ## How it works
 

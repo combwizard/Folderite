@@ -3,11 +3,15 @@ using Folderite.Config;
 namespace Folderite.Menu;
 
 /// <summary>What the menu needs to know about the moment it was opened.</summary>
+/// <param name="AppName">Name of the app the menu is opened over, as the per-app recent submenu shows it; null for none.</param>
+/// <param name="AppRecentPaths">The folders used most in that app.</param>
 internal sealed record MenuContext(
     string? CurrentPath,
     IReadOnlyList<string> OpenPaths,
     IReadOnlyList<string> RecentPaths,
-    string? ClipboardPath);
+    string? ClipboardPath,
+    string? AppName = null,
+    IReadOnlyList<string>? AppRecentPaths = null);
 
 /// <summary>Side effects the menu items trigger; implemented by App.</summary>
 internal interface IMenuCommands
@@ -68,11 +72,19 @@ internal static class MenuComposer
             }
         }
 
-        var recent = Distinct(ctx.RecentPaths, current).Take(Math.Max(0, config.RecentCount)).ToList();
-        if (recent.Count > 0)
-        {
+        int recentCount = Math.Max(0, config.RecentCount);
+        var recent = Distinct(ctx.RecentPaths, current).Take(recentCount).ToList();
+        var appRecent = config.ShowAppRecent && !string.IsNullOrWhiteSpace(ctx.AppName)
+            ? Distinct(ctx.AppRecentPaths ?? [], current).Take(recentCount).ToList()
+            : [];
+        if (recent.Count > 0 || appRecent.Count > 0)
             nodes.Add(MenuSeparator.Instance);
+        if (recent.Count > 0)
             nodes.Add(new SubMenu("&Recent", recent.Select(p => (MenuNode)FolderItem(p, cmd, showParent: true)).ToList()));
+        if (appRecent.Count > 0)
+        {
+            nodes.Add(new SubMenu("Recent &in " + Escape(ctx.AppName!.Trim()),
+                appRecent.Select(p => (MenuNode)FolderItem(p, cmd, showParent: true)).ToList()));
         }
 
         if (config.ShowDrives)

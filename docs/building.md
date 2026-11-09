@@ -53,7 +53,8 @@ There are no tests for Explorer, the file dialogs or the third-party apps. Those
 - Elevated Explorer/dialog: fails gracefully unless Folderite runs elevated
 - Keyboard shortcut: opens the menu for Explorer (active tab), a file dialog, Directory Opus (focused side) and the desktop; elsewhere picking a folder opens a new Explorer window; does nothing while paused; a shortcut that's taken shows a warning in Settings
 - Favorite with subfolders: submenu lists subfolders (by name / newest first); the folder itself is the bold top item; a disconnected network folder doesn't freeze the menu
-- Recent folders: folders used in the current app rank higher there
+- Recent folders: the same list over Explorer, Directory Opus and a file dialog; a folder inside a zip file (Explorer) or a 7z file (Opus) is not recorded
+- Recent in this app (when enabled): over Opus it is named **Recent in Directory Opus** and lists only folders used in Opus; over Notepad's Save dialog it is named after Notepad; not shown over the tray icon
 - Dialog start folder: off by default; when on, a new Open/Save dialog moves to the app's last folder and keeps the typed file name; a per-app folder wins; folder pickers work
 - Drives submenu (when enabled): lists drives with free space; a disconnected network drive doesn't hang the menu
 
